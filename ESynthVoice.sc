@@ -1,15 +1,17 @@
 ESynthVoice {
-  var <server, <out;
-  var <krSynths, <arSynths;
-  var <krBuses, <arBuses, <group;
+  var <server, <out, <amp;
+  var <noteSynth, <outSynth;
+  var <oscs, <vcf, <vca;
+  var <krBuses, <arBuses, <group, <oscGroup, <vcfGroup, <vcaGroup;
 
-  *new { |out = 0, server|
+  *new { |out = 0, amp = 1, server|
     server = server ?? { Server.default };
-    ^super.new.init(out, server);
+    ^super.new.init(out, amp, server);
   }
 
-  init { |argout, argserver|
+  init { |argout, argamp, argserver|
     out = argout;
+    amp = argamp;
     server = argserver;
     server.waitForBoot {
       this.prMakeSynthDefs;
@@ -29,69 +31,22 @@ ESynthVoice {
       Out.kr(velbus, vel);
       Out.kr(gatebus, gate);
     }).add;
-    SynthDef(\ESynthVCO, { |out, notebus|
-      var note = In.kr(notebus);
-      var tune = \tune.kr(0, 0.1);
-      var duty = \duty.kr(0.5, 0.1);
-      var slop = \slop.kr(0.01, 0.1);
-      var sawAmt = \sawAmt.kr(0, 0.1);
-      var sqrAmt = \sqrAmt.kr(0, 0.1);
-      var sinAmt = \sinAmt.kr(0, 0.1);
-      var triAmt = \triAmt.kr(0, 0.1);
-      var sig = EVCO.ar(note, tune, duty, slop, sawAmt, sqrAmt, sinAmt, triAmt);
-      Out.ar(out, sig);
-    }).add;
-    SynthDef(\ESynthNoise, { |out|
-      Out.ar(out, ENoise.ar(\pinkAmt.kr(0, 0.1), \whiteAmt.kr(0, 0.1)));
-    }).add;
-    SynthDef(\ESynthVCF, { |out, in, notebus, velbus, gatebus|
-      var sig = In.ar(in);
-      var cutoff = \cutoff.kr(1000, 0.1);
-      var res = \res.kr(0, 0.1);
-      var type = \type.kr(1);
-      var note = In.kr(notebus);
-      var vel = In.kr(velbus);
-      var gate = In.kr(gatebus);
-      var keyAmt = \keyAmt.kr(0, 0.1);
-      var envAmt = \envAmt.kr(0, 0.1);
-      var velAmt = \velAmt.kr(0, 0.1);
-      var at = \at.kr(0.01, 0.1);
-      var dt = \dt.kr(0.5, 0.1);
-      var sl = \sl.kr(0.5, 0.1);
-      var rt = \rt.kr(1, 0.1);
-
-      var env = Env.adsr(at, dt, sl, rt, envAmt).kr(0, gate).midiratio;
-      var key = ((note - 48) * keyAmt).midiratio;
-      // todo vel amt
-      var freq = cutoff * env * key;
-      freq = freq.clip(20, 20000);
-      sig = HouvilainenFilter.ar(sig, freq, res, type);
-      Out.ar(out, sig);
-    }).add;
-    SynthDef(\ESynthVCA, { |out, in, velbus, gatebus|
-      var sig = In.ar(in);
-      var vel = In.kr(velbus);
-      var gate = In.kr(gatebus);
-      var envAmt = \envAmt.kr(1, 0.1);
-      var velAmt = \velAmt.kr(0, 0.1);
-      var amp = \amp.kr(0, 0.1);
-      var pan = \pan.kr(0, 0.1);
-      var at = \at.kr(0.01, 0.1);
-      var dt = \dt.kr(0.5, 0.1);
-      var sl = \sl.kr(0.5, 0.1);
-      var rt = \rt.kr(1, 0.1);
-
-      var env = Env.adsr(at, dt, sl, rt, envAmt).kr(0, gate);
-      // todo vel amt
-      amp = amp + env;
-      Out.ar(out, Pan2.ar(sig, pan, amp));
+    ESynthVCO.prMakeSynthDef;
+    ESynthNoise.prMakeSynthDef;
+    ESynthVCF.prMakeSynthDef;
+    ESynthVCA.prMakeSynthDef;
+    SynthDef(\ESynthOut, { |out, in|
+      var amp = \amp.kr(1, 0.1);
+      var sig = In.ar(in, 2);
+      Out.ar(out, sig * amp);
     }).add;
   }
 
   prMakeBuses {
     arBuses = (
-      vcos: Bus.audio(server),
-      vcf: Bus.audio(server)
+      oscs: Bus.audio(server),
+      vcf: Bus.audio(server),
+      vca: Bus.audio(server, 2)
     );
     krBuses = (
       note: Bus.control(server),
@@ -102,20 +57,26 @@ ESynthVoice {
 
   prMakeSynths {
     group = Group(server);
-    krSynths = ();
-    arSynths = ();
-    krSynths.note = Synth(\ESynthNote, [notebus: krBuses.note, velbus: krBuses.vel, gatebus: krBuses.gate], group);
-    arSynths.vcos = 3.collect { Synth(\ESynthVCO, [out: arBuses.vcos, notebus: krBuses.note], group, \addToTail) };
-    arSynths.noise = Synth(\ESynthNoise, [out: arBuses.vcos], group, \addToTail);
-    arSynths.vcf = Synth(\ESynthVCF, [out: arBuses.vcf, in: arBuses.vcos, notebus: krBuses.note, velbus: krBuses.vel, gatebus: krBuses.gate], group, \addToTail);
-    arSynths.vca = Synth(\ESynthVCA, [out: out, in: arBuses.vcf, velbus: krBuses.vel, gatebus: krBuses.gate], group, \addToTail)
+
+    noteSynth = Synth(\ESynthNote, [notebus: krBuses.note, velbus: krBuses.vel, gatebus: krBuses.gate], group);
+
+    oscGroup = Group(group, \addToTail);
+    oscs = (3.collect { ESynthVCO(oscGroup, arBuses.oscs, krBuses.note) }) ++ [ESynthNoise(oscGroup, arBuses.oscs, krBuses.note)];
+
+    vcfGroup = Group(group, \addToTail);
+    vcf = ESynthVCF(vcfGroup, arBuses.vcf, arBuses.oscs, krBuses.note, krBuses.vel, krBuses.gate);
+
+    vcaGroup = Group(group, \addToTail);
+    vca = ESynthVCA(vcaGroup, arBuses.vca, arBuses.vcf, krBuses.vel, krBuses.gate);
+
+    outSynth = Synth(\ESynthOut, [out: out, in: arBuses.vca, amp: amp], group, \addToTail);
   }
 
   noteOn { |note, vel|
-    krSynths.note.set(\note, note, \vel, vel, \gate, 1);
+    noteSynth.set(\note, note, \vel, vel, \gate, 1);
   }
 
   noteOff {
-    krSynths.note.set(\gate, 0);
+    noteSynth.set(\gate, 0);
   }
 }
