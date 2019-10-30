@@ -9,7 +9,9 @@ ESynthVCFView : ESynthModule {
   init2 { |vcf|
     this.titleString_("VCF");
     menu = ESynthMenu(view, Rect(17, 3, 140, 15), "", ["RLPF", "SVF", "DFM1", "BLowPass", "BLowPass4", "Houvilainen"]);
-    type = ESynthMenu(view, Rect(167, 3, 120, 15), "Type", ["Bypass", "LP 24db", "LP 18db", "LP 12db", "LP 6db", "HP 24db", "BP 24db", "N 24db"]).value_(1);
+    menu.action = { |view| view.item.postln };
+    type = ESynthMenu(view, Rect(167, 3, 120, 15), "Type", ["Bypass", "LP 24db", "LP 18db", "LP 12db", "LP 6db", "HP 24db", "BP 24db", "N 24db"]).value_(vcf.type);
+    type.action = { |view| vcf.type_(view.value) };
 
     cutoff = ESynthKnob(view, Rect(0, 32, 34, 67), "Cutoff", \freq.asSpec.copy.default_(20000), 15);
     res = ESynthKnob(view, Rect(40, 32, 34, 67), "Res", \amp, 0.005);
@@ -28,7 +30,7 @@ ESynthVCFView : ESynthModule {
 
   vcf_ { |value|
     vcf = value;
-    vcf.params.do { |param|
+    vcf.params.reject(_ == \type).do { |param|
       var knob = this.perform(param);
       knob.value_(vcf.perform(param));
       knob.action_({ |value| vcf.perform((param ++ "_").asSymbol, value) });

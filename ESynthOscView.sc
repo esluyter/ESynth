@@ -8,6 +8,7 @@ ESynthOscView : ESynthModule {
   init2 { |index, osc|
     this.titleString_("OSC " ++ index);
     menu = ESynthMenu(view, Rect(37, 3, 120, 15), "", ["VCO", "SuperSaw", "Noise"]);
+    menu.action = { |view| view.item.postln };
     this.osc_(osc);
     ^this;
   }
@@ -28,7 +29,9 @@ ESynthOscView : ESynthModule {
     oscView = oscViewClass.new(view, Rect(0, 32, this.bounds.width, 67));
   }
 
+  /*
   menuValue_ { |value|
     menu.value_(value);
   }
+  */
 }

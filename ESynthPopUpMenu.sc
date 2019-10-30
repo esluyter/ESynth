@@ -24,7 +24,7 @@ ESynthMenu : SCViewHolder {
       .font_(Font(ESynthModule.monofont, 10))
       .action_({ |v|
         //this.changed;
-        action.(v.value);
+        action.(v);
       });
   }
 

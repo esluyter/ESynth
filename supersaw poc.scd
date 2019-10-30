@@ -55,6 +55,8 @@ SynthDef(\supersaw_poc, { |out, gate = 1, freq = 440, amp = 0.1, pan = 0, cutoff
 }).add;
 )
 
+{ ESuperSaw.ar(MouseX.kr(100, 5000,\exponential), MouseY.kr) ! 2 }.play
+
 x = Synth(\supersaw_poc)
 x.free
 
