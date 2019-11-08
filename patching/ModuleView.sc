@@ -179,7 +179,7 @@ ModuleView : SCViewHolder {
       Pen.addRoundedRect(Rect(1, 3, v.bounds.width - 2, v.bounds.height - 6), 5, 5);
       Pen.strokeColor = Color.white;
       Pen.width = 1;
-      Pen.fillColor = Color.gray(0.15);//Color(0.1, 0, 0.1);
+      Pen.fillColor = if (model.displayName == "- empty -") { Color(0.1, 0, 0.1, 0.5) } { Color.gray(0.18, 0.9) };
       Pen.fillStroke;
 
       // inlets
