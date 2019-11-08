@@ -1,6 +1,8 @@
 (
 Window.closeAll;
-w = Window.new("Lines", Rect(1200, 200, 740, 800)).front;
+w = Window.new("Lines", Rect(0, 200, 880, 765)).front;
+w.acceptsMouseOver = true;
+//w.background_(Color.black)
 v = UserView.new(w, Rect(0, 0, w.bounds.width, w.bounds.height));
 
 ~patchCord = { |p1, p2, makeKnob = true|
@@ -8,68 +10,118 @@ v = UserView.new(w, Rect(0, 0, w.bounds.width, w.bounds.height));
   Pen.moveTo(p1);
   Pen.curveTo(p2, p1 + offset, p2 - offset);
   if (makeKnob) {
-    Knob(v, Rect(p2.x - 8, p2.y - 16, 16, 16));
+    //Knob(v, Rect(p2.x - 8, p2.y - 16, 16, 16));
   };
 };
 
-~lfos = [
-  LFOView(v, Rect(14, 12, 153, 75)), // 1px extra for line, 3px extra for dots
-  LFOView(v, Rect(184, 12, 153, 75)),
-  LFOView(v, Rect(34, 107, 153, 75)),
-  LFOView(v, Rect(204, 107, 153, 75)),
+~lfos = ModuleList(LFONil, 10);
 
-  LFOView(v, Rect(354, 12, 153, 75)),
-  LFOView(v, Rect(524, 12, 153, 75)),
-  LFOView(v, Rect(374, 107, 153, 75)),
-  LFOView(v, Rect(544, 107, 153, 75))
-];
+~lfoviews = ~lfos.collect { |lfo, i|
+  var row = i.div(5);
+  var col = i - (row * 5);
+  var indent = row % 2 * 20;
+  LFOView(v, Rect(170 * col + indent + 14, 105 * row + 12, 153, 75), lfo);
+  // 1px extra for line, 3px extra for dots
+};
 
-~oscs = [
-  OscView(v, Rect(14, 212, 253, 75)),
-  OscView(v, Rect(34, 307, 253, 75)),
+//~lfos[0].rate
 
-  OscView(v, Rect(284, 212, 253, 75)),
-  OscView(v, Rect(304, 307, 253, 75)),
-];
+~oscs = ModuleList(OscNil, 6);
+~oscs[0].class_(OscVCO);
+~oscs[1].class_(OscVCO);
+~oscs[3].class_(OscVCO);
+~oscs[4].class_(OscNoise);
 
-~filts = [
-  FiltView(v, Rect(14, 427, 253, 115)),
-  FiltView(v, Rect(14, 562, 253, 115)),
-  FiltView(v, Rect(284, 427, 253, 115)),
-  FiltView(v, Rect(284, 562, 253, 115)),
-];
+~oscviews = ~oscs.collect { |osc, i|
+  var row = i.div(3);
+  var col = i - (row * 3);
+  var indent = row % 2 * 20;
+  OscView(v, Rect(270 * col + indent + 14, 105 * row + 232, 253, 75), osc);
+};
 
-~amp = AmpView(v, Rect(14, 707, 283, 75));
+~filts = ModuleList(FiltNil, 4);
+~filts[0].class_(FiltHouvilainen);
+
+~filtviews = ~filts.collect { |filt, i|
+  var row = i.div(2);
+  var col = i - (row * 2);
+  FiltView(v, Rect(370 * col + 14, 105 * row + 457, 353, 75), filt);
+};
+
+~amps = ModuleList(AmpVCA, 1);
+
+~ampviews = [AmpView(v, Rect(14, 677, 283, 75), ~amps[0])];
 
 v.drawFunc = { |v|
-  var plusin = 30@405;
-  var plusout = 30@405;
-  Pen.strokeColor = Color.black;
+  var plusin = 30@435;
+  var plusout = 30@435;
+
+  /*
+  ~patchCord.(~lfoviews[0].getOutletPoint(0), ~lfoviews[1].getInletPoint(3));
+  ~patchCord.(~lfoviews[0].getOutletPoint(0), ~lfoviews[5].getInletPoint(0));
+  ~patchCord.(~lfoviews[1].getOutletPoint(0), ~lfoviews[5].getInletPoint(3));
+  ~patchCord.(~lfoviews[1].getOutletPoint(0), ~oscs[0].getInletPoint(0));
+  ~patchCord.(~lfoviews[1].getOutletPoint(0), ~oscs[1].getInletPoint(0));
+  ~patchCord.(~lfoviews[5].getOutletPoint(0), ~oscs[0].getInletPoint(2));
+  ~patchCord.(~lfoviews[6].getOutletPoint(0), ~filts[0].getInletPoint(3));
+  ~patchCord.(~lfoviews[7].getOutletPoint(0), ~filts[2].getInletPoint(3));
+  */
+
+  Pen.width = 2.5;
+  ~lfos.patchCords.do { |patchCord|
+    ~patchCord.(~lfoviews[patchCord.fromIndex].getOutletPoint, ~lfoviews[patchCord.toIndex].getInletPoint(patchCord.toInlet));
+    Pen.strokeColor = patchCord.color;
+    Pen.stroke;
+  };
+  ~oscs.patchCords.do { |patchCord|
+    ~patchCord.(~lfoviews[patchCord.fromIndex].getOutletPoint, ~oscviews[patchCord.toIndex].getInletPoint(patchCord.toInlet));
+    Pen.strokeColor = patchCord.color;
+    Pen.stroke;
+  };
+  ~filts.patchCords.do { |patchCord|
+    ~patchCord.(~lfoviews[patchCord.fromIndex].getOutletPoint, ~filtviews[patchCord.toIndex].getInletPoint(patchCord.toInlet));
+    Pen.strokeColor = patchCord.color;
+    Pen.stroke;
+  };
+  ~amps.patchCords.do { |patchCord|
+    ~patchCord.(~lfoviews[patchCord.fromIndex].getOutletPoint, ~ampviews[patchCord.toIndex].getInletPoint(patchCord.toInlet));
+    Pen.strokeColor = patchCord.color;
+    Pen.stroke;
+  };
+
   Pen.width = 1.5;
-  ~patchCord.(~lfos[0].getOutletPoint(0), ~lfos[1].getInletPoint(3));
-  ~patchCord.(~lfos[0].getOutletPoint(0), ~lfos[2].getInletPoint(0));
-  ~patchCord.(~lfos[1].getOutletPoint(0), ~lfos[2].getInletPoint(3));
-  ~patchCord.(~lfos[1].getOutletPoint(0), ~oscs[0].getInletPoint(0));
-  ~patchCord.(~lfos[1].getOutletPoint(0), ~oscs[1].getInletPoint(0));
-  ~patchCord.(~lfos[2].getOutletPoint(0), ~oscs[0].getInletPoint(2));
-  Pen.stroke;
   Pen.strokeColor = Color.gray;
-  ~oscs.do { |osc|
+  ~oscviews.do { |osc|
     ~patchCord.(osc.getOutletPoint(0), plusin, false);
   };
-  ~patchCord.(plusout, ~filts[0].getInletPoint(0), false);
-  ~patchCord.(plusout, ~filts[2].getInletPoint(0), false);
-  ~patchCord.(~filts[0].getOutletPoint(0), ~filts[1].getInletPoint(0), false);
-  ~patchCord.(~filts[2].getOutletPoint(0), ~filts[3].getInletPoint(0), false);
-  ~patchCord.(~filts[1].getOutletPoint(0), ~amp.getInletPoint(0), false);
-  ~patchCord.(~filts[3].getOutletPoint(0), ~amp.getInletPoint(1), false);
+  ~patchCord.(plusout, ~filtviews[0].getInletPoint(0), false);
+  ~patchCord.(plusout, ~filtviews[1].getInletPoint(0), false);
+  ~patchCord.(~filtviews[0].getOutletPoint(0), ~filtviews[2].getInletPoint(0), false);
+  ~patchCord.(~filtviews[1].getOutletPoint(0), ~filtviews[3].getInletPoint(0), false);
+  ~patchCord.(~filtviews[2].getOutletPoint(0), ~ampviews[0].getInletPoint(0), false);
+  ~patchCord.(~filtviews[3].getOutletPoint(0), ~ampviews[0].getInletPoint(1), false);
   Pen.stroke;
-  /*
-  Pen.width = 1;
-  Pen.strokeColor = Color.black;
-  Pen.fillColor = Color.white;
-  Pen.addOval(Rect(20, 395, 20, 20));
-  Pen.fillStroke;
-  */
 };
+
+~lfos.signal(\patchCords).connectTo(v.methodSlot("refresh"));
+~oscs.signal(\patchCords).connectTo(v.methodSlot("refresh"));
+~filts.signal(\patchCords).connectTo(v.methodSlot("refresh"));
+~amps.signal(\patchCords).connectTo(v.methodSlot("refresh"));
 )
+
+FiltModel.tryPerform(\envTypes).asArray
+
+s.actualSampleRate
+s.sampleRate / s.options.blockSize
+
+~lfos[0].patchTo(~lfos[5], 0);
+~lfos[0].patchTo(~lfos[5], 3);
+~lfos[0].patchTo(~lfos[1], 3);
+~lfos[1].patchTo(~lfos[5], 3);
+~lfos[0].patchCords[0].dump
+~lfos.patchCords
+~lfos[5].dump
+
+p = Array(5)
+
+[3, 6].select(_<=6)
