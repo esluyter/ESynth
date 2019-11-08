@@ -29,8 +29,12 @@ ModuleView : SCViewHolder {
 
   prMakeMenus {
     classMenu = PopUpMenu(view, Rect(4, 7, 96, 12))
+      .background_(Color.grey(0.04))
+      .stringColor_(Color.white)
       .font_(Font.monospace.size_(8));
     typeMenu = PopUpMenu(view, Rect(110, 7, 66, 12))
+      .background_(Color.grey(0.04))
+      .stringColor_(Color.white)
       .font_(Font.monospace.size_(8));
     this.prMakeExtraMenus;
   }
@@ -40,18 +44,24 @@ ModuleView : SCViewHolder {
   prMakeParams {
     knobs = this.class.maxParams.collect { |i|
       Knob(view, Rect(4 + this.prOffsetX(i), 22, 25, 25))
-        .mode_(\vert);
+        .mode_(\vert)
+        .color_([Color.gray(0.8), Color.white, Color.clear, Color.black]);
     };
     boxes = this.class.maxParams.collect { |i|
       NumberBox(view, Rect(3 + this.prOffsetX(i), 46, 27, 11))
         .font_(Font.monospace.size_(8))
+        .background_(Color.grey(0.04))
+        .stringColor_(Color.white)
+        .normalColor_(Color.white)
+        .typingColor_(Color.hsv(0, 0.5, 1))
         .align_(\center)
         .maxDecimals_(4);
     };
     names = this.class.maxParams.collect { |i|
-      StaticText(view, Rect(2 + this.prOffsetX(i), 57, 29, 10))
+      StaticText(view, Rect(2 + this.prOffsetX(i), 58, 29, 10))
         .font_(Font.sansSerif.size_(8))
-        .align_(\center);
+        .align_(\center)
+        .stringColor_(Color.white);
     };
   }
 
@@ -59,6 +69,7 @@ ModuleView : SCViewHolder {
     tooltip = StaticText(parent, Rect(0, 0, 30, 10))
       .visible_(false)
       .font_(Font.sansSerif.size_(8))
+      .stringColor_(Color.white)
       .align_(\center);
 
     view.mouseOverAction = { |v, x, y|
@@ -166,28 +177,28 @@ ModuleView : SCViewHolder {
     view.drawFunc = { |v|
       // border
       Pen.addRoundedRect(Rect(1, 3, v.bounds.width - 2, v.bounds.height - 6), 5, 5);
-      Pen.strokeColor = Color.black;
+      Pen.strokeColor = Color.white;
       Pen.width = 1;
-      Pen.fillColor = Color.white;
+      Pen.fillColor = Color.gray(0.15);//Color(0.1, 0, 0.1);
       Pen.fillStroke;
 
       // inlets
       this.class.arInlets.do { |i|
         Pen.addRoundedRect(Rect(13 + this.prOffsetX(i), 1, 6, 4), 1, 1);
-        Pen.fillColor = Color.white;
-        Pen.strokeColor = Color.gray;
-        Pen.width = 1.5;
+        Pen.fillColor = Color(0.1, 0, 0.1);
+        Pen.strokeColor = Color.white;
+        Pen.width = 1;
         Pen.fillStroke;
       };
       (model.params.size - this.class.inletOffset).do { |i|
         Pen.addRoundedRect(Rect(13 + this.prOffsetXInlet(i), 1, 6, 4), 1, 1);
         if (curInlet == (i + this.class.inletOffset)) {
           Pen.fillColor = Color.white;
-          Pen.strokeColor = Color.black;
+          Pen.strokeColor = Color.white;
           Pen.width = 1;
           Pen.fillStroke;
         } {
-          Pen.fillColor = Color.black;
+          Pen.fillColor = Color.gray;
           Pen.fill;
         };
       };
@@ -195,12 +206,12 @@ ModuleView : SCViewHolder {
       // outlet
       Pen.addRoundedRect(Rect(13, v.bounds.height - 5, 6, 4), 1, 1);
       if (model.rate == \kr) {
-        Pen.fillColor = Color.black;
+        Pen.fillColor = Color.gray;
         Pen.fill;
       } {
-        Pen.fillColor = Color.white;
-        Pen.strokeColor = Color.gray;
-        Pen.width = 1.5;
+        Pen.fillColor = Color(0.1, 0, 0.1);
+        Pen.strokeColor = Color.white;
+        Pen.width = 1;
         Pen.fillStroke;
       };
     };

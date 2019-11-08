@@ -4,8 +4,12 @@ LFOView : ModuleView {
   // narrower menus for LFO view
   prMakeMenus {
     classMenu = PopUpMenu(view, Rect(4, 7, 76, 12))
+      .background_(Color.grey(0.04))
+      .stringColor_(Color.white)
       .font_(Font.monospace.size_(8));
     typeMenu = PopUpMenu(view, Rect(87, 7, 61, 12))
+      .background_(Color.grey(0.04))
+      .stringColor_(Color.white)
       .font_(Font.monospace.size_(8));
   }
 
