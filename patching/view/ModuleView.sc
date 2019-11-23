@@ -167,6 +167,7 @@ ModuleView : SCViewHolder {
       };
       model.signal(\replaced).connectTo(this.methodSlot("model_(value)"));
       classMenu.signal(\value).connectTo(model.methodSlot("classInput_(value)"));
+      typeMenu.signal(\value).connectTo(model.methodSlot("type_(value)"));
     };
     this.prMakeDrawFunc;
   }

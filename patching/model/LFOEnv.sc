@@ -3,7 +3,7 @@ LFOEnv : LFOModel {
 
   *initClass {
     displayName = "LF Env";
-    types = [\sustain, \oneshot, \retrig];
+    types = ['gate', 'retrig', 'global retrig'];
   }
 
   init {

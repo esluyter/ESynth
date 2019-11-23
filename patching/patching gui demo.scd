@@ -1,8 +1,8 @@
 (
 Window.closeAll;
-w = Window.new("Lines", Rect(0, 200, 880, 765)).front;
+w = Window.new("Lines", Rect(0, 200, 880, 975)).front;
 w.acceptsMouseOver = true;
-//w.background_(Color.black)
+w.background_(Color(0.1, 0, 0.1));
 v = UserView.new(w, Rect(0, 0, w.bounds.width, w.bounds.height));
 
 ~patchCord = { |p1, p2, makeKnob = true|
@@ -14,7 +14,7 @@ v = UserView.new(w, Rect(0, 0, w.bounds.width, w.bounds.height));
   };
 };
 
-~lfos = ModuleList(LFONil, 10);
+~lfos = ModuleList(LFONil, 20);
 
 ~lfoviews = ~lfos.collect { |lfo, i|
   var row = i.div(5);
@@ -23,6 +23,7 @@ v = UserView.new(w, Rect(0, 0, w.bounds.width, w.bounds.height));
   LFOView(v, Rect(170 * col + indent + 14, 105 * row + 12, 153, 75), lfo);
   // 1px extra for line, 3px extra for dots
 };
+//~lfoviews[0].knobs[0].color
 
 //~lfos[0].rate
 
@@ -36,7 +37,7 @@ v = UserView.new(w, Rect(0, 0, w.bounds.width, w.bounds.height));
   var row = i.div(3);
   var col = i - (row * 3);
   var indent = row % 2 * 20;
-  OscView(v, Rect(270 * col + indent + 14, 105 * row + 232, 253, 75), osc);
+  OscView(v, Rect(270 * col + indent + 14, 105 * row + 442, 253, 75), osc);
 };
 
 ~filts = ModuleList(FiltNil, 4);
@@ -45,16 +46,16 @@ v = UserView.new(w, Rect(0, 0, w.bounds.width, w.bounds.height));
 ~filtviews = ~filts.collect { |filt, i|
   var row = i.div(2);
   var col = i - (row * 2);
-  FiltView(v, Rect(370 * col + 14, 105 * row + 457, 353, 75), filt);
+  FiltView(v, Rect(370 * col + 14, 105 * row + 667, 353, 75), filt);
 };
 
 ~amps = ModuleList(AmpVCA, 1);
 
-~ampviews = [AmpView(v, Rect(14, 677, 283, 75), ~amps[0])];
+~ampviews = [AmpView(v, Rect(14, 887, 283, 75), ~amps[0])];
 
 v.drawFunc = { |v|
-  var plusin = 30@435;
-  var plusout = 30@435;
+  var plusin = 30@645;
+  var plusout = 30@645;
 
   /*
   ~patchCord.(~lfoviews[0].getOutletPoint(0), ~lfoviews[1].getInletPoint(3));
@@ -89,8 +90,8 @@ v.drawFunc = { |v|
     Pen.stroke;
   };
 
-  Pen.width = 1.5;
-  Pen.strokeColor = Color.gray;
+  Pen.width = 2;
+  Pen.strokeColor = Color.gray(0.4);
   ~oscviews.do { |osc|
     ~patchCord.(osc.getOutletPoint(0), plusin, false);
   };
@@ -122,6 +123,8 @@ s.sampleRate / s.options.blockSize
 ~lfos.patchCords
 ~lfos[5].dump
 
-p = Array(5)
+~amps[0].envTypes
 
-[3, 6].select(_<=6)
+
+~lfos[15].global
+s.options.numAudioBusChannels

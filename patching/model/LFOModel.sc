@@ -11,4 +11,8 @@ LFOModel : ModuleModel {
   patchTo { |module, inlet|
     module.patchFrom(this, inlet);
   }
+
+  isGlobal {
+    ^this.types[this.type].asString.contains("global");
+  }
 }

@@ -1,0 +1,55 @@
+ESynth {
+  var globals, voices, model;
+
+  init { |argmodel, numVoices = 1|
+
+  }
+
+  putLFO { |index, lfo, global = false|
+
+  }
+
+  patchLFO { |index, inlet, outLFO|
+
+  }
+
+  putOsc { |index, osc|
+
+  }
+
+  patchOsc { |index, inlet, outLFO|
+
+  }
+
+  putFilt { |index, filt|
+
+  }
+
+  patchFilt { |index, inlet, outLFO|
+
+  }
+
+  patchAmp { |index, inlet, outLFO|
+
+  }
+
+  numVoices_ { |value|
+
+  }
+
+  noteOn { |vel, num|
+
+  }
+
+  noteOff { |num|
+
+  }
+
+  bend { |val|
+
+  }
+
+  mod { |val|
+
+  }
+}

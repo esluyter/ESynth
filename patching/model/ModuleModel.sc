@@ -6,7 +6,7 @@ ModuleModel {
     classvar types, displayName
   */
 
-  var <list, <type, <params, patchCords, <rate = \ar;
+  var <list, <>type, <params, patchCords, <rate = \ar;
 
   *new { |list = 0, type = 0, paramInputs = (#[]), patchCords = (#[])|
     ^super.newCopyArgs(list, type).initModel.init.prInitParams(paramInputs, patchCords);
