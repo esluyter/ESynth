@@ -128,3 +128,5 @@ s.sampleRate / s.options.blockSize
 
 ~lfos[15].global
 s.options.numAudioBusChannels
+a = [0, 1, 3, 3];
+a.indexOf(nil) ?? a.size
