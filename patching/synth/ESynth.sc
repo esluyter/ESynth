@@ -3,90 +3,71 @@ ESynth {
   var <server, <group, <treeFunc;
 
   *initClass {
-    ServerBoot.add {
-      SynthDef(\modulatekr, {
-        var in = In.kr(\in.ir);
-        var amt = \amt.kr * (\amtmod.kr + 1);
-        var out = \out.ir;
-        Out.kr(out, in * amt);
-      }).add;
+    Class.initClassTree(ESynthDef);
 
-      SynthDef(\modulatear, {
-        var in = InFeedback.ar(\in.ir);
-        var amt = \amt.kr * (\amtmod.ar + 1);
-        var out = \out.ir;
-        Out.ar(out, in * amt);
-      }).add;
+    ESynthDef.lfo(\Sin,
+      \delay, [\kr, [0, 10, 4], 0.03],
+      \freq, [\ar, [0.01, 200, 6, 0, 2], 0.5],
+      \key, \kr,
+      \phase, [\ar, [0, 1]],
+      {
+        SinOsc.kr(~freq, ~phase) * XLine.kr(0.01, 1, ~delay)
+      }, {
+        SinOsc.ar(~freq, ~phase) * XLine.kr(0.01, 1, ~delay)
+      }
+    );
 
-      SynthDef(\lfosin, {
-        var delay = \delay.kr;
-        var freq = \freq.kr(2) * (\freqmod.kr * 72).midiratio;
-        var phase = \phase.kr;
-        var key = \key.kr;
+    ESynthDef.lfo(\Noise,
+      \delay, [\kr, [0, 10, 4], 0.03],
+      \freq, [\ar, [0.01, 200, 6, 0, 2], 0.5],
+      \interp, [\kr, [0, 3], 1],
+      {
+        Select.kr(~interp, [LFDNoise0.kr(~freq), LFDNoise1.kr(~freq), LFNoise2.kr(~freq), LFDNoise3.kr(~freq)]) * XLine.kr(0.01, 1, ~delay);
+      }, {
+        Select.ar(~interp, [LFDNoise0.ar(~freq), LFDNoise1.ar(~freq), LFNoise2.ar(~freq), LFDNoise3.ar(~freq)]) * XLine.kr(0.01, 1, ~delay);
+      }
+    );
 
-        var out = \out.ir;
-        var sig = SinOsc.kr(freq, phase) * XLine.kr(0.01, 1, delay);
-        Out.kr(out, sig);
-      }).add;
+    ESynthDef.osc(\VCO,
+      \tune, [\ar, [-48, 48, \lin, 0.0, 0], 1, 12, true],
+      \fine, [\ar, [-2, 2, \lin, 0.0, 0], 0.01, 10, true],
+      \duty, [\kr, [0, 1, \lin, 0.0, 0.5], 0.01, 10, true],
+      \slop, [\kr, [0.001, 1, \exp, 0.0, 0.01]],
+      \sin, \kr,
+      \tri, \kr,
+      \saw, \kr,
+      \sqr, \kr,
+      {
+        ~freq = (~note + ~tune + ~fine).midicps;
+        EVCO.ar(~freq, ~duty, ~slop, ~saw, ~sqr, ~sin, ~tri);
+      }
+    );
 
-      SynthDef(\lfonoise, {
-        var delay = \delay.kr;
-        var freq = \freq.kr(2) * (\freqmod.kr * 72).midiratio;
-        var interp = \interp.kr;
+    ESynthDef.osc(\Noise,
+      \white, \kr,
+      \pink, \kr,
+      {
+        WhiteNoise.ar(~white) + PinkNoise.ar(~pink)
+      }
+    );
 
-        var out = \out.ir;
-        var sig = Select.kr(interp, [LFDNoise0.kr(freq), LFDNoise1.kr(freq), LFNoise2.kr(freq), LFDNoise3.kr(freq)]) * XLine.kr(0.01, 1, delay);
-        Out.kr(out, sig);
-      }).add;
+    ESynthDef.filt(\Houvilainen,
+      ['bypass', 'LP 24db', 'LP 18db', 'LP 12db', 'LP 6db', 'HP 24db', 'BP 24db', 'N 24db'],
+      \cutoff, [\ar, \freq.asSpec.copy.default_(20000), 25],
+      \res, \kr,
+      \mod, \kr,
+      {
+        ~cutoff = ~cutoff * (~env * 100).midiratio;
+        HouvilainenFilter.ar(~in, ~cutoff, ~res, ~type);
+      }
+    );
 
-      SynthDef(\lfoarsin, {
-        var delay = \delay.kr;
-        var freq = \freq.kr(2) * (\freqmod.ar * 72).midiratio;
-        var phase = \phase.ar;
-        var key = \key.kr;
-
-        var out = \out.ir;
-        var sig = SinOsc.ar(freq, phase) * XLine.kr(0.01, 1, delay);
-        Out.ar(out, sig);
-      }).add;
-
-      SynthDef(\oscnoise, {
-        var whiteamt = \white.kr;
-        var pinkamt = \pink.kr;
-
-        var out = \out.ir;
-        var sig = WhiteNoise.ar(whiteamt) + PinkNoise.ar(pinkamt);
-        Out.ar(out, sig);
-      }).add;
-
-      SynthDef(\filter, {
-        var keyamt = \key.kr;
-        var velamt = \vel.kr;
-        var envamt = \env.kr;
-        var cutoff = \cutoff.kr * (\cutoffmod.ar * 12).midiratio;
-        var res = \res.kr;
-        var modamt = \mod.kr;
-
-        var type = \type.kr(1);
-        var out = \out.ir;
-        var in = In.ar(\in.ir);
-        var sig = HouvilainenFilter.ar(in, cutoff, res, type);
-        Out.ar(out, sig);
-      }).add;
-
-      SynthDef(\vca, {
-        var keyamt = \key.kr;
-        var velamt = \vel.kr;
-        var envamt = \env.kr;
-        var pan = \pan.kr;
-
-        var out = \out.ir;
-        var inmono = In.ar(\inmono.ir);
-        var instereo = In.ar(\instereo.ir, 2);
-        var sig = Pan2.ar(inmono, pan) + Balance2.ar(instereo[0], instereo[1], pan);
-        Out.ar(out, sig);
-      }).add;
-    }
+    ESynthDef.amp(\VCA,
+      \pan, [\ar, [-1, 1, \lin, 0.0, 0], 0.01, 10, true],
+      {
+        (Pan2.ar(~inmono, ~pan) + Balance2.ar(~instereo[0], ~instereo[1], ~pan)) * ~env;
+      }
+    );
   }
 
   *new { |server, model, numVoices = 1|

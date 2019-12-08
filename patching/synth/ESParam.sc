@@ -5,4 +5,8 @@ ESParam {
   *new { |name, rate = \control, spec = \amp, step = 0.005, shift_scale = 10, centered = false|
     ^super.newCopyArgs(name, rate, spec.asSpec, step, shift_scale, centered);
   }
+
+  modName {
+    ^(name ++ '_mod').asSymbol
+  }
 }

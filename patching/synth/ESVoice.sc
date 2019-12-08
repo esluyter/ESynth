@@ -1,43 +1,161 @@
 ESVoice {
   var <synthgroup, <group;
-  var <modgroup, <lfogroup, <oscgroup, <filtgroup, <ampgroup;
-  var <mods, <lfos, <oscs, <filts, <amp;
+  var <modgroup, <lfogroup, <oscgroup, <filtgroups;
+  var <lfos, <oscs, <filtmods, <filts, <amp;
   var <oscbus, <stbus, <monobus;
+  var <note, <bend = 0, <notebus, <gatebus, <velbus, <modbus;
+  var <noteStack, <notePriorityFunc;
 
 
   *new { |synthgroup, numlfos = 20, numoscs = 6, numfilts = 4|
+    synthgroup = synthgroup ?? Server.default.defaultGroup;
     ^super.newCopyArgs(synthgroup).init(numlfos, numoscs, numfilts);
   }
 
   init { |numlfos, numoscs, numfilts|
-    mods = [];
+    noteStack = [];
     lfos = nil ! numlfos;
     oscs = nil ! numoscs;
     filts = nil ! numfilts;
-    oscbus = Bus.audio(group.server);
-    stbus = Bus.audio(group.server, 2);
-    monobus = Bus.audio(group.server, 1);
+    # notebus, gatebus, velbus, modbus = { Bus.control(synthgroup.server) } ! 4;
+    this.note_(60);
+    this.gate_(0);
+    this.vel_(100);
+    this.mod_(0);
+    oscbus = Bus.audio(synthgroup.server);
+    stbus = Bus.audio(synthgroup.server, 2);
+    monobus = Bus.audio(synthgroup.server, 1);
+    this.prMakeGroups(numfilts);
+    this.lastPriority;
   }
 
-  prMakeGroups {
+  prMakeGroups { |numfilts|
     group = Group(synthgroup, \addToTail);
     modgroup = Group(group, \addToTail);
     lfogroup = Group(group, \addToTail);
     oscgroup = Group(group, \addToTail);
-    filtgroup = Group(group, \addToTail);
-    ampgroup = Group(group, \addToTail);
+    filtmods = [
+      ESUnit.mod(oscbus, 1, [group, \addToTail], monobus),
+      ESUnit.mod(oscbus, 0, [group, \addToTail], stbus.subBus(0)),
+      ESUnit.mod(oscbus, 0, [group, \addToTail], stbus.subBus(1))
+    ];
+    filtgroups = { Group(group, \addToTail) }.dup(numfilts/2);
+    amp = ESUnit.amp(\VCA, [inmono: monobus, instereo: stbus, velbus: velbus, gatebus: gatebus, env: 1], [group, \addToTail], 0);
   }
 
-  putOsc { |index, osc|
-    oscs[index].free;
-    oscs[index] = nil;
-    if (osc.notNil) {
-      var defname = osc.class.asSymbol.toLower;
-      oscs[index] = Synth(defname, [out: oscbus], oscgroup);
+  modulate { |fromUnit, toUnit, param, amt = 0.1|
+    ^ESUnit.modUnits(fromUnit, toUnit, param, amt, modgroup);
+  }
+
+  putLFO { |index, name, rate = 'control', args = (#[])|
+    lfos[index].free;
+    lfos[index] = nil;
+    if(name.notNil) {
+      args = args ++ [notebus: notebus, velbus: velbus, gatebus: gatebus, modbus: modbus];
+      lfos[index] = ESUnit.lfo(name, args, lfogroup, rate);
     };
   }
 
-  putFilt { |index, filt|
+  putOsc { |index, name, args = (#[])|
+    oscs[index].free;
+    oscs[index] = nil;
+    if (name.notNil) {
+      args = args ++ [notebus: notebus, velbus: velbus];
+      oscs[index] = ESUnit.osc(name, args, oscgroup, oscbus)
+    };
+  }
 
+  putFilt { |index, name, args = (#[])|
+    filts[index].free;
+    filts[index] = nil;
+    if (name.notNil) {
+      args = args ++ [notebus: notebus, velbus: velbus, gatebus: gatebus];
+      filts[index] = ESUnit.filt(name, args, filtgroups[(index / 2).floor], monobus);
+    };
+    this.prCheckFilts;
+  }
+
+  prCheckFilts {
+    var oddFilts = [], evenFilts = [];
+    filts.pairsDo { |a, b|
+      if (a.notNil) {
+        oddFilts = oddFilts.add(a);
+      };
+      if (b.notNil) {
+        evenFilts = evenFilts.add(b);
+      };
+    };
+    if ((oddFilts.size == 0) or: (evenFilts.size == 0)) {
+      filtmods[0].set(\amt, 1);
+      filtmods[1].set(\amt, 0);
+      filtmods[2].set(\amt, 0);
+      filts.do(_.set(\out, monobus));
+    } {
+      filtmods[0].set(\amt, 0);
+      filtmods[1].set(\amt, 1);
+      filtmods[2].set(\amt, 1);
+      oddFilts.do(_.set(\out, stbus.subBus(0)));
+      evenFilts.do(_.set(\out, stbus.subBus(1)));
+    };
+  }
+
+  bend_ { |value|
+    bend = value;
+    notebus.set(note + bend);
+  }
+
+  note_ { |value|
+    note = value;
+    notebus.set(note + bend);
+  }
+
+  vel { ^velbus.getSynchronous }
+
+  vel_ { |value|
+    velbus.set(value.linlin(0, 127, 0.0, 1.0));
+  }
+
+  gate { ^gatebus.getSynchronous }
+
+  gate_ { |value|
+    gatebus.set(value);
+  }
+
+  mod { ^modbus.getSynchronous }
+
+  mod_ { |value|
+    modbus.set(value);
+  }
+
+  firstPriority {
+    notePriorityFunc = { |stack| stack.first };
+  }
+
+  lastPriority {
+    notePriorityFunc = { |stack| stack.last };
+  }
+
+  highestPriority {
+    notePriorityFunc = { |stack| stack.maxItem };
+  }
+
+  lowestPriority {
+    notePriorityFunc = { |stack| stack.minItem };
+  }
+
+  noteOn { |note = 60, vel = 100|
+    noteStack = noteStack.add(note);
+    this.note_(notePriorityFunc.(noteStack));
+    this.vel_(vel);
+    this.gate_(1);
+  }
+
+  noteOff { |note|
+    noteStack.remove(note);
+    if (noteStack.isEmpty) {
+      this.gate_(0);
+    } {
+      this.note_(notePriorityFunc.(noteStack));
+    };
   }
 }

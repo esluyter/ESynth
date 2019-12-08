@@ -1,16 +1,3 @@
-e = ESUnit(\lfosin);
-e.bus.scope
-e.free
-
-SynthDescLib.global.at(\lfosin).controlNames
-
-/*
-Implicit:
-in
-out
-type
-*/
-
 /*
 //ESynthDef.mod(name, ...params, func); // addEnvParams = false, rate = [audio : control], 1 input
 ESynthDef.lfo(name, [typelist,] ...params, krfunc, arfunc); // addEnvParams = false, rate = [audio : control], 0 inputs
@@ -22,62 +9,84 @@ ESynthDef.amp(name, [typelist,] ...params, func); // addEnvParams = true, rate =
 /*
 each param has:
 - name
-- inlet rate
-- spec / step / shift scale / centered
+- inlet rate / spec / step / shift scale / centered
 */
 
+
+
+e = ESVoice()
 (
-ESynthDef.lfo(\Sin,
-  \delay, [\kr, [0, 10, 4], 0.03],
-  \freq, [\ar, [0.01, 200, 6, 0, 2], 0.5],
-  \key, \kr,
-  \phase, [\ar, [0, 1]],
-  {
-    SinOsc.kr(~freq, ~phase) * XLine.kr(0.01, 1, ~delay)
-  }, {
-    SinOsc.ar(~freq, ~phase) * XLine.kr(0.01, 1, ~delay)
-  }
-);
-
-ESynthDef.osc(\VCO,
-  \tune, [\ar, [-48, 48, \lin, 0.0, 0], 1, 12, true],
-  \fine, [\ar, [-2, 2, \lin, 0.0, 0], 0.01, 10, true],
-  \duty, [\kr, [0, 1, \lin, 0.0, 0.5], 0.01, 10, true],
-  \slop, [\kr, [0.001, 1, \exp, 0.0, 0.01]],
-  \sin, \kr,
-  \tri, \kr,
-  \saw, \kr,
-  \sqr, \kr,
-  {
-    ~freq = (~note + ~tune + ~fine).midicps;
-    EVCO.ar(~freq, ~duty, ~slop, ~saw, ~sqr, ~sin, ~tri);
-  }
-);
-
-ESynthDef.filt(\Houvilainen,
-  ['bypass', 'LP 24db', 'LP 18db', 'LP 12db', 'LP 6db', 'HP 24db', 'BP 24db', 'N 24db'],
-  \cutoff, [\ar, \freq.asSpec.copy.default_(20000), 25],
-  \res, \kr,
-  \mod, \kr,
-  {
-    HouvilainenFilter.ar(~in, ~cutoff, ~res, ~type);
-  }
-);
-
-ESynthDef.amp(\VCA,
-  \pan, [\ar, [-1, 1, \lin, 0.0, 0], 0.01, 10, true],
-  {
-    Pan2.ar(~inmono, ~pan) + Balance2.ar(~instereo[0], ~instereo[1], ~pan);
-  }
-);
+MIDIClient.init;
+MIDIIn.connectAll;
+MIDIdef.noteOn(\on, { |vel, num|
+  e.noteOn(num, vel);
+});
+MIDIdef.noteOff(\off, { |vel, num|
+  e.noteOff(num);
+});
+MIDIdef.bend(\bend, { |val|
+  e.bend_(val.linlin(0, 16383, -2.0, 2.0));
+});
 )
 
 
-SynthDescLib.global[\ESoscARVCO].inputs
-SynthDescLib.global[\ESfiltARHouvilainen].outputs
-SynthDescLib.global[\ESampARVCA].outputs[0].numberOfChannels
-x.free;x = Synth(\ESoscARVCO, [\tune: 0, \saw, 0.1, \tune_mod, 0])
-Synth(\ESmodKRmod)
+e.putOsc(0, \VCO, [\saw, 0.1]);
+e.putLFO(0, \Sin);
+e.putLFO(1, \Sin, args: [freq: 0.1]);
+e.putFilt(0, \Houvilainen, [\type, 1, \cutoff, 100, \res, 0.5]);
+e.filts[0].set(\rel, 0.1, \atk, 2, \dec, 3, \sus, 0.5, \env, 0.9);
+e.amp.set(\rel, 1, \atk, 0.1, \vel, 0);
+e.modulate(e.lfos[0], e.filts[0], \cutoff, 0.1);
+e.lfos[0].set(\freq, 6);
+e.filts[0].modAt(\cutoff).set(\amt, 0.03)
+e.putFilt(1, \Houvilainen, [\type, 1, \cutoff, 100, \res, 0.5]);
+e.filts[1].set(\rel, 0.1, \atk, 1.8, \dec, 3, \sus, 0.5, \env, 0.9);
+e.modulate(e.lfos[1], e.filts[1], \cutoff, 0.03);
+
+e.putOsc(1, \VCO, [\sqr, 0.03, \tune, -12]);
+e.putLFO(2, \Sin, args: [freq: 0.1]);
+e.modulate(e.lfos[2], e.oscs[1], \duty, 0.5);
+e.putOsc(2, \VCO, [\saw, 0.1, \fine, -0.1]);
+e.amp.set(\atk, 0.01);
+e.filts[0].set(\atk, 0.7)
+
+(72 * 2).midiratio
+
+e.putOsc(0, \VCO);
+e.oscs[0].set(\saw, 0.1)
+e.putLFO(0, \Sin);
+e.putLFO(1, \Sin, args: [freq: 0.1]);
+e.modulate(e.lfos[0], e.oscs[0], \tune, 0.1);
+e.modulate(e.lfos[1], e.oscs[0].modAt(\tune), \amt, 0.1);
+e.oscs[0].putMod(\tune, nil);
+e.putFilt(0, \Houvilainen);
+e.filts[0].set(\type, 1, \cutoff, 1000);
+e.modulate(e.lfos[0], e.filts[0], \cutoff, 1);
+e.filts[0].modAt(\cutoff).set(\amt, 0.5);
+e.putFilt(1, \Houvilainen);
+e.filts[1].set(\type, 4, \cutoff, 3000);
+e.modulate(e.lfos[1], e.filts[1], \cutoff, 1);
+e.lfos[1].set(\freq, 1.3333);
+e.lfos[0].set(\freq, 1.8);
+e.putOsc(1, \VCO, [\sqr, 0.03, \tune, -12]);
+e.putLFO(2, \Sin, args: [freq: 0.1]);
+e.modulate(e.lfos[2], e.oscs[1], \duty);
+e.oscs[1].modAt(\duty).set(\amt, 0.5);
+e.putLFO(3, \Noise, args: [interp: 3]);
+e.modulate(e.lfos[3], e.amp, \pan, 1);
+e.putFilt(1, nil)
+e.putFilt(0, nil)
+e.putOsc(0, nil)
+e.putOsc(1, nil)
+(0..3).do(e.putLFO(_, nil))
+
+
+
+
+
+
+
+
 
 (
 ~buses = (
