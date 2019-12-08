@@ -1,6 +1,7 @@
 ESynth {
-  var <globals, <voices, <model;
+  var <globals, <voices, <model, <numVoices;
   var <server, <group, <treeFunc;
+  var <roundRobinIndex = 0;
 
   *initClass {
     Class.initClassTree(ESynthDef);
@@ -74,72 +75,102 @@ ESynth {
     ^super.new.init(server, model, numVoices);
   }
 
-  init { |argserver, argmodel, numVoices = 1|
+  init { |argserver, argmodel, nVoices = 1|
     server = argserver ?? Server.default;
     model = argmodel;
-
-    globals = ESGlobals();
-    voices = { ESVoice() } ! numVoices;
+    numVoices = nVoices;
 
     treeFunc = {
+      if (voices.notNil) {
+        voices.do(_.free);
+      };
+      group.free;
+
+      roundRobinIndex = 0;
       group = Group(server);
-      globals.start(group, 20);
-      voices.do(_.start(group, 20, 6, 4));
+      //globals = ESGlobals();
+      voices = { ESVoice(group) } ! numVoices;
+      // parse model..... :/
     };
     treeFunc.();
     ServerTree.add(treeFunc, server);
   }
 
   free {
+    voices.do(_.free);
     group.free;
     ServerTree.remove(treeFunc, server);
   }
 
-  putLFO { |index, lfo, global = false|
-
+  addMod { |lfoIndex, toUnitFunc, param, amt|
+    voices.do({ |v|
+      var fromUnit = v.lfos[lfoIndex];
+      var toUnit = toUnitFunc.(v);
+      v.modulate(fromUnit, toUnit, param, amt);
+    });
   }
 
-  patchLFO { |index, inlet, outLFO|
-
+  freeMod { |toUnitFunc, param|
+    voices.do({ |v|
+      var toUnit = toUnitFunc.(v);
+      toUnit.putMod(param, nil);
+    });
   }
 
-  putOsc { |index, osc|
-    voices.do(_.putOsc(index, osc));
+  setModAmt { |toUnitFunc, param, amt|
+    voices.do({ |v|
+      var toUnit = toUnitFunc.(v);
+      toUnit.modAt(param).set(\amt, amt);
+    });
   }
 
-  patchOsc { |index, inlet, outLFO|
-
+  putLFO { |index, name, rate = 'control', args = (#[])|
+    voices.do(_.putLFO(index, name, rate, args));
   }
 
-  putFilt { |index, filt|
-
+  setLFO { |index ...args|
+    voices.do(_.setLFO(index, *args));
   }
 
-  patchFilt { |index, inlet, outLFO|
-
+  putOsc { |index, name, args = (#[])|
+    voices.do(_.putOsc(index, name, args));
   }
 
-  patchAmp { |index, inlet, outLFO|
+  setOsc { |index ...args|
+    voices.do(_.setOsc(index, *args));
+  }
 
+  putFilt { |index, name, args = (#[])|
+    voices.do(_.putFilt(index, name, args));
+  }
+
+  setFilt { |index ...args|
+    voices.do(_.setFilt(index, *args));
+  }
+
+  setAmp { |...args|
+    voices.do(_.setAmp(*args));
   }
 
   numVoices_ { |value|
-
+    numVoices = value;
+    treeFunc.();
   }
 
   noteOn { |vel, num|
-
+    voices[roundRobinIndex].noteOn(vel, num);
+    roundRobinIndex = (roundRobinIndex + 1) % numVoices
   }
 
   noteOff { |num|
-
+    voices.do(_.noteOff(num));
   }
 
-  bend { |val|
-
+  bend_ { |value|
+    voices.do(_.bend_(value));
   }
 
-  mod { |val|
-
+  mod_ { |value|
+    voices.do(_.mod_(value));
   }
 }

@@ -43,6 +43,16 @@ ESVoice {
     amp = ESUnit.amp(\VCA, [inmono: monobus, instereo: stbus, velbus: velbus, gatebus: gatebus, env: 1], [group, \addToTail], 0);
   }
 
+  free {
+    [monobus, stbus, oscbus, velbus, gatebus, notebus, modbus].do(_.free);
+    amp.free;
+    filtmods.do(_.free);
+    lfos.do(_.free);
+    oscs.do(_.free);
+    filts.do(_.free);
+    group.free;
+  }
+
   modulate { |fromUnit, toUnit, param, amt = 0.1|
     ^ESUnit.modUnits(fromUnit, toUnit, param, amt, modgroup);
   }
@@ -56,6 +66,10 @@ ESVoice {
     };
   }
 
+  setLFO { |index ...args|
+    lfos[index].set(*args);
+  }
+
   putOsc { |index, name, args = (#[])|
     oscs[index].free;
     oscs[index] = nil;
@@ -63,6 +77,10 @@ ESVoice {
       args = args ++ [notebus: notebus, velbus: velbus];
       oscs[index] = ESUnit.osc(name, args, oscgroup, oscbus)
     };
+  }
+
+  setOsc { |index ...args|
+    oscs[index].set(*args);
   }
 
   putFilt { |index, name, args = (#[])|
@@ -97,6 +115,14 @@ ESVoice {
       oddFilts.do(_.set(\out, stbus.subBus(0)));
       evenFilts.do(_.set(\out, stbus.subBus(1)));
     };
+  }
+
+  setFilt { |index ...args|
+    filts[index].set(*args);
+  }
+
+  setAmp { |...args|
+    amp.set(*args);
   }
 
   bend_ { |value|

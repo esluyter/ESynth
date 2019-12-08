@@ -14,7 +14,9 @@ each param has:
 
 
 
-e = ESVoice()
+
+e = ESynth(s, nil, 8);
+
 (
 MIDIClient.init;
 MIDIIn.connectAll;
@@ -34,21 +36,21 @@ e.putOsc(0, \VCO, [\saw, 0.1]);
 e.putLFO(0, \Sin);
 e.putLFO(1, \Sin, args: [freq: 0.1]);
 e.putFilt(0, \Houvilainen, [\type, 1, \cutoff, 100, \res, 0.5]);
-e.filts[0].set(\rel, 0.1, \atk, 2, \dec, 3, \sus, 0.5, \env, 0.9);
-e.amp.set(\rel, 1, \atk, 0.1, \vel, 0);
-e.modulate(e.lfos[0], e.filts[0], \cutoff, 0.1);
-e.lfos[0].set(\freq, 6);
-e.filts[0].modAt(\cutoff).set(\amt, 0.03)
+e.setFilt(0, \rel, 0.1, \atk, 2, \dec, 3, \sus, 0.5, \env, 0.9);
+e.setAmp(\rel, 1, \atk, 0.1, \vel, 1);
+e.addMod(0, { |v| v.filts[0] }, \cutoff, 0.1);
+e.setLFO(0, \freq, 6);
+e.setModAmt({ |v| v.filts[0] }, \cutoff, 0.03);
 e.putFilt(1, \Houvilainen, [\type, 1, \cutoff, 100, \res, 0.5]);
-e.filts[1].set(\rel, 0.1, \atk, 1.8, \dec, 3, \sus, 0.5, \env, 0.9);
-e.modulate(e.lfos[1], e.filts[1], \cutoff, 0.03);
+e.setFilt(1, \rel, 0.1, \atk, 1.8, \dec, 3, \sus, 0.5, \env, 0.9);
+e.addMod(1, { |v| v.filts[1] }, \cutoff, 0.03);
 
 e.putOsc(1, \VCO, [\sqr, 0.03, \tune, -12]);
 e.putLFO(2, \Sin, args: [freq: 0.1]);
-e.modulate(e.lfos[2], e.oscs[1], \duty, 0.5);
+e.addMod(2, { |v| v.oscs[1] }, \duty, 0.5);
 e.putOsc(2, \VCO, [\saw, 0.1, \fine, -0.1]);
-e.amp.set(\atk, 0.01);
-e.filts[0].set(\atk, 0.7)
+e.setAmp(\atk, 0.01);
+e.setFilt(0, \atk, 0.7)
 
 (72 * 2).midiratio
 
