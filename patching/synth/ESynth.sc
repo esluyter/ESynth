@@ -58,7 +58,7 @@ ESynth {
       \res, \kr,
       \mod, \kr,
       {
-        ~cutoff = ~cutoff * (~env * 100).midiratio;
+        ~cutoff = ~cutoff * ((~env + ~vel) * 100).midiratio;
         HouvilainenFilter.ar(~in, ~cutoff, ~res, ~type);
       }
     );
@@ -88,8 +88,8 @@ ESynth {
 
       roundRobinIndex = 0;
       group = Group(server);
-      //globals = ESGlobals();
       voices = { ESVoice(group) } ! numVoices;
+      globals = ESGlobals(group);
       // parse model..... :/
     };
     treeFunc.();
@@ -103,11 +103,33 @@ ESynth {
   }
 
   addMod { |lfoIndex, toUnitFunc, param, amt|
-    voices.do({ |v|
-      var fromUnit = v.lfos[lfoIndex];
-      var toUnit = toUnitFunc.(v);
-      v.modulate(fromUnit, toUnit, param, amt);
-    });
+    var globalLFO = globals.lfos[lfoIndex].notNil;
+    var globalToUnit = toUnitFunc.(voices[0]).isNil; ///toUnitFunc.isFunction.not;
+    var fromUnit, toUnit;
+    if (globalLFO and: globalToUnit) {
+      fromUnit = globals.lfos[lfoIndex];
+      toUnit = toUnitFunc;
+      globals.modulate(fromUnit, toUnit, param, amt);
+    };
+    if (globalLFO and: globalToUnit.not) {
+      fromUnit = globals.lfos[lfoIndex];
+      voices.do({ |v|
+        toUnit = toUnitFunc.(v);
+        v.modulate(fromUnit, toUnit, param, amt);
+      });
+    };
+    if (globalLFO.not and: globalToUnit) {
+      fromUnit = voices[0].lfos[lfoIndex];
+      toUnit = toUnitFunc;
+      globals.modulate(fromUnit, toUnit, param, amt);
+    };
+    if (globalLFO.not and: globalToUnit.not) {
+      voices.do({ |v|
+        fromUnit = v.lfos[lfoIndex];
+        toUnit = toUnitFunc.(v);
+        v.modulate(fromUnit, toUnit, param, amt);
+      });
+    }
   }
 
   freeMod { |toUnitFunc, param|
@@ -124,12 +146,22 @@ ESynth {
     });
   }
 
-  putLFO { |index, name, rate = 'control', args = (#[])|
-    voices.do(_.putLFO(index, name, rate, args));
+  putLFO { |index, name, rate = 'control', args = (#[]), global = false|
+    if (global) {
+      globals.putLFO(index, name, rate, args);
+      voices.do(_.putLFO(index, nil));
+    } {
+      globals.putLFO(index, nil);
+      voices.do(_.putLFO(index, name, rate, args));
+    };
   }
 
   setLFO { |index ...args|
-    voices.do(_.setLFO(index, *args));
+    if (globals.lfos[index].notNil) {
+      globals.setLFO(index, *args);
+    } {
+      voices.do(_.setLFO(index, *args));
+    };
   }
 
   putOsc { |index, name, args = (#[])|
@@ -158,6 +190,11 @@ ESynth {
   }
 
   noteOn { |vel, num|
+    var i = 0;
+    while { voices[roundRobinIndex].inUse && (i < numVoices) } {
+      roundRobinIndex = (roundRobinIndex + 1) % numVoices;
+      i = i + 1;
+    };
     voices[roundRobinIndex].noteOn(vel, num);
     roundRobinIndex = (roundRobinIndex + 1) % numVoices
   }

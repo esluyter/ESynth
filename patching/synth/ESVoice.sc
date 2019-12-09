@@ -184,4 +184,6 @@ ESVoice {
       this.note_(notePriorityFunc.(noteStack));
     };
   }
+
+  inUse { ^noteStack.isEmpty.not }
 }

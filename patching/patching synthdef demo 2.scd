@@ -15,7 +15,8 @@ each param has:
 
 
 
-e = ESynth(s, nil, 8);
+e = ESynth(s, nil, 1);
+e.free
 
 (
 MIDIClient.init;
@@ -54,6 +55,13 @@ e.setFilt(0, \atk, 0.7, \vel, 1, \env, 1)
 e.setFilt(1, \atk, 1.2, \vel, 1, \env, 1)
 
 (72 * 2).midiratio
+(
+var unit;
+try { unit = e.voices[0].lfos[0].modAt(\freq) };
+unit;
+)
+e.addMod(1, { |v| v.lfos[0] }, \freq, 0.1);
+
 
 e.putOsc(0, \VCO);
 e.oscs[0].set(\saw, 0.1)

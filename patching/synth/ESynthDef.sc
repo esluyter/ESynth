@@ -45,6 +45,7 @@ ESynthDef {
   krDefName { ^("ES" ++ type ++ "KR" ++ name).asSymbol }
 
   prMakeParamEnvir { |rate = 'audio'|
+    var velamt, velin, envamt;
     var e = Environment.make(envirFunc);
     e[\type] = \type.kr;
     params.do { |param|
@@ -56,10 +57,14 @@ ESynthDef {
       );
       e[name] = spec.warp.map(spec.unmap(value) + (modvalue * 0.5));
     };
-    e[\vel] = SelectX.kr(e[\vel] ?? 1, [1, In.kr(\velbus.ir) * 2]);
+
+    velamt = e[\vel] ?? 1;
+    velin = In.kr(\velbus.ir);
+    envamt = e[\env] ?? 0;
     if (autoEnv) {
-      e[\env] = (e[\env] ?? 1) * (e[\vel]) * Env([0.0, 0.0, 1.0, e[\sus], 0.0], [e[\del], e[\atk], e[\dec], e[\rel]], -4.0, 3).kr(0, e[\gate]);
+      e[\env] = LinSelectX.kr(velamt, [1, velin * 2]) * envamt * Env([0, 0, 1, e[\sus], 0], [e[\del], e[\atk], e[\dec], e[\rel]], -4.0, 3).kr(0, e[\gate]);
     };
+    e[\vel] = LinSelectX.kr(envamt, [In.kr(\velbus.ir) * velamt, 0]);
     ^e;
   }
 

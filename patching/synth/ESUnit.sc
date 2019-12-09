@@ -68,7 +68,7 @@ ESUnit {
   }
 
   free {
-    if (def.type == \mod) {
+    if ((def.type == \mod) and: (toUnit.notNil)) {
       toUnit.removeMod(paramindex);
       fromUnit.removeOutputMod(this);
     };
