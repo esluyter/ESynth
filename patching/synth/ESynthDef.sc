@@ -63,7 +63,18 @@ ESynthDef {
     velin = In.kr(\velbus.ir);
     envamt = e[\env] ?? 0;
     if (autoEnv) {
-      e[\env] = LinSelectX.kr(velamt, [1, velin * 2]) * envamt * Env([0, 0, 1, e[\sus], 0], [e[\del], e[\atk], e[\dec], e[\rel]], -4.0, 3).kr(0, e[\gate]);
+      var envType = \env_type.kr(0); // 0 - sustain, 1 - oneshot, 2 - retrig
+      var loopNode = Select.kr(envType, [-99, -99, 0]);
+      var relNode = Select.kr(envType, [3, -99, 3]);
+      var env = EnvGen.ar(
+        [ 0,       4,       relNode, loopNode,
+          0,       e[\del], 5,       -4,
+          1,       e[\atk], 5,       -4,
+          e[\sus], e[\dec], 5,       -4,
+          0,       e[\rel], 5,       -4 ],
+        e[\gate];
+      );
+      e[\env] = LinSelectX.kr(velamt, [1, velin * 2]) * envamt * env;
     };
     e[\vel] = LinSelectX.kr(envamt, [In.kr(\velbus.ir) * velamt, 0]);
     ^e;

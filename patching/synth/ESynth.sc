@@ -210,14 +210,15 @@ ESynth {
     treeFunc.();
   }
 
-  noteOn { |vel, num|
+  noteOn { |note = 60, vel = 100|
     var i = 0;
     while { voices[roundRobinIndex].inUse && (i < numVoices) } {
       roundRobinIndex = (roundRobinIndex + 1) % numVoices;
       i = i + 1;
     };
-    voices[roundRobinIndex].noteOn(vel, num);
-    roundRobinIndex = (roundRobinIndex + 1) % numVoices
+    voices[roundRobinIndex].noteOn(note, vel);
+    globals.noteOn(note, vel);
+    roundRobinIndex = (roundRobinIndex + 1) % numVoices;
   }
 
   noteOff { |num|

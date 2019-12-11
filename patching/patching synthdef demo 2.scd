@@ -12,11 +12,32 @@ each param has:
 - inlet rate / spec / step / shift scale / centered
 */
 
+/*
+next up in synth land:
+- key control of filter cutoff
+- LFOs that do all the things they're meant to (one shot, retrig, global, random, blah blah)
+- Fill out LFOs and oscs and filts
+- add filter mod?
+- handle freeing and cmd-period a little more gracefully?
 
-e.putOsc(0, \VCO, [saw: 0.1, sqr: 0.1]);
+moving into model incorporation:
+- change number of voices on the fly
+- init with model, synth is slave to model
+- simplify model a great deal! -- use ESynthDefs instead of classes
+... probably in reverse order
+*/
+
+
+e.putOsc(0, \VCO, [saw: 0.1, sqr: 0.1 ]);
 e.putFilt(0, \Houvilainen, [cutoff: 100, res: 0, type: 4, env: 0.7, atk: 3, dec: 5, sus: 0.5, rel: 0.5]);
 e.putFilt(1, \Houvilainen, [cutoff: 200, res: 0, type: 3, env: 0.7, atk: 3, dec: 5, sus: 0.5, rel: 0.5]);
 e.setAmp(\rel, 3.5)
+
+e.putOsc(0, \VCO, [saw: 0.1, sqr: 0.1 ]);
+e.setAmp(\rel, 3.5, \atk, 0.01, \dec, 0.1, \sus, 0.3)
+e.setAmp(\env_type, 2)
+e.putLFO(0, \Noise, \control, [interp: 2], true);
+e.addMod(0, { |v| v.amp }, \dec, 0.3)
 
 
 e = ESynth(s, nil, 8);
