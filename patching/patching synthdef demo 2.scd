@@ -13,9 +13,13 @@ each param has:
 */
 
 
+e.putOsc(0, \VCO, [saw: 0.1, sqr: 0.1]);
+e.putFilt(0, \Houvilainen, [cutoff: 100, res: 0, type: 4, env: 0.7, atk: 3, dec: 5, sus: 0.5, rel: 0.5]);
+e.putFilt(1, \Houvilainen, [cutoff: 200, res: 0, type: 3, env: 0.7, atk: 3, dec: 5, sus: 0.5, rel: 0.5]);
+e.setAmp(\rel, 3.5)
 
 
-e = ESynth(s, nil, 1);
+e = ESynth(s, nil, 8);
 e.free
 
 (
@@ -32,6 +36,7 @@ MIDIdef.bend(\bend, { |val|
 });
 )
 
+e.portamento = 0.2
 
 e.putOsc(0, \VCO, [\saw, 0.1]);
 e.putLFO(0, \Sin);

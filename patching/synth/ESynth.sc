@@ -103,12 +103,15 @@ ESynth {
   }
 
   addMod { |lfoIndex, toUnitFunc, param, amt|
-    var globalLFO = globals.lfos[lfoIndex].notNil;
-    var globalToUnit = toUnitFunc.(voices[0]).isNil; ///toUnitFunc.isFunction.not;
     var fromUnit, toUnit;
+    var globalLFO = globals.lfos[lfoIndex].notNil;
+    var globalToUnit = true;
+    try {
+      globalToUnit = toUnitFunc.(voices[0]).isNil;
+    };
     if (globalLFO and: globalToUnit) {
       fromUnit = globals.lfos[lfoIndex];
-      toUnit = toUnitFunc;
+      toUnit = toUnitFunc.(globals);
       globals.modulate(fromUnit, toUnit, param, amt);
     };
     if (globalLFO and: globalToUnit.not) {
@@ -120,7 +123,7 @@ ESynth {
     };
     if (globalLFO.not and: globalToUnit) {
       fromUnit = voices[0].lfos[lfoIndex];
-      toUnit = toUnitFunc;
+      toUnit = toUnitFunc.(globals);
       globals.modulate(fromUnit, toUnit, param, amt);
     };
     if (globalLFO.not and: globalToUnit.not) {
@@ -133,17 +136,35 @@ ESynth {
   }
 
   freeMod { |toUnitFunc, param|
-    voices.do({ |v|
-      var toUnit = toUnitFunc.(v);
+    var globalToUnit = true;
+    try {
+      globalToUnit = toUnitFunc.(voices[0]).isNil;
+    };
+    if (globalToUnit) {
+      var toUnit = toUnitFunc.(globals);
       toUnit.putMod(param, nil);
-    });
+    } {
+      voices.do({ |v|
+        var toUnit = toUnitFunc.(v);
+        toUnit.putMod(param, nil);
+      });
+    };
   }
 
   setModAmt { |toUnitFunc, param, amt|
-    voices.do({ |v|
-      var toUnit = toUnitFunc.(v);
+    var globalToUnit = true;
+    try {
+      globalToUnit = toUnitFunc.(voices[0]).isNil;
+    };
+    if (globalToUnit) {
+      var toUnit = toUnitFunc.(globals);
       toUnit.modAt(param).set(\amt, amt);
-    });
+    } {
+      voices.do({ |v|
+        var toUnit = toUnitFunc.(v);
+        toUnit.modAt(param).set(\amt, amt);
+      });
+    };
   }
 
   putLFO { |index, name, rate = 'control', args = (#[]), global = false|
@@ -209,5 +230,9 @@ ESynth {
 
   mod_ { |value|
     voices.do(_.mod_(value));
+  }
+
+  portamento_ { |value|
+    voices.do(_.portamento_(value));
   }
 }

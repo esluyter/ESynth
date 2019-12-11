@@ -1,8 +1,8 @@
 ESGlobals {
-  var <synthgroup, <group;
+  var <synthgroup, <group, <notesyn;
   var <modgroup, <lfogroup;
   var <lfos;
-  var <note, <bend = 0, <notebus, <gatebus, <velbus, <modbus;
+  var <note = 60, <bend = 0, <portamento = 0, <notebus, <gatebus, <velbus, <modbus;
   var <noteStack, <notePriorityFunc;
 
   *new { |synthgroup, numlfos = 20|
@@ -14,7 +14,6 @@ ESGlobals {
     noteStack = [];
     lfos = nil ! numlfos;
     # notebus, gatebus, velbus, modbus = { Bus.control(synthgroup.server) } ! 4;
-    this.note_(60);
     this.gate_(0);
     this.vel_(100);
     this.mod_(0);
@@ -24,6 +23,7 @@ ESGlobals {
 
   prMakeGroups {
     group = Group(synthgroup, \addToHead);
+    notesyn = ESUnit.note(0, group, notebus);
     modgroup = Group(group, \addToTail);
     lfogroup = Group(group, \addToTail);
   }
@@ -53,12 +53,17 @@ ESGlobals {
 
   bend_ { |value|
     bend = value;
-    notebus.set(note + bend);
+    notesyn.set(\bend, value);
   }
 
   note_ { |value|
     note = value;
-    notebus.set(note + bend);
+    notesyn.set(\note, value);
+  }
+
+  portamento_{ |value|
+    portamento = value;
+    notesyn.set(\portamento, value);
   }
 
   vel { ^velbus.getSynchronous }

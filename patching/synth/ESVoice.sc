@@ -1,9 +1,9 @@
 ESVoice {
-  var <synthgroup, <group;
+  var <synthgroup, <group, <notesyn;
   var <modgroup, <lfogroup, <oscgroup, <filtgroups;
   var <lfos, <oscs, <filtmods, <filts, <amp;
   var <oscbus, <stbus, <monobus;
-  var <note, <bend = 0, <notebus, <gatebus, <velbus, <modbus;
+  var <note = 60, <bend = 0, <portamento = 0, <notebus, <gatebus, <velbus, <modbus;
   var <noteStack, <notePriorityFunc;
 
 
@@ -18,7 +18,6 @@ ESVoice {
     oscs = nil ! numoscs;
     filts = nil ! numfilts;
     # notebus, gatebus, velbus, modbus = { Bus.control(synthgroup.server) } ! 4;
-    this.note_(60);
     this.gate_(0);
     this.vel_(100);
     this.mod_(0);
@@ -31,6 +30,7 @@ ESVoice {
 
   prMakeGroups { |numfilts|
     group = Group(synthgroup, \addToTail);
+    notesyn = ESUnit.note(0, group, notebus);
     modgroup = Group(group, \addToTail);
     lfogroup = Group(group, \addToTail);
     oscgroup = Group(group, \addToTail);
@@ -127,12 +127,17 @@ ESVoice {
 
   bend_ { |value|
     bend = value;
-    notebus.set(note + bend);
+    notesyn.set(\bend, value);
   }
 
   note_ { |value|
     note = value;
-    notebus.set(note + bend);
+    notesyn.set(\note, value);
+  }
+
+  portamento_{ |value|
+    portamento = value;
+    notesyn.set(\portamento, value);
   }
 
   vel { ^velbus.getSynchronous }

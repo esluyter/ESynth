@@ -3,6 +3,10 @@ ESUnit {
       <rate, // \audio or \control
       <bus, <freebus = false, <synth, <mods, <modOffset, <outputMods, <fromUnit, <toUnit, <paramindex;
 
+  *note { |portamento = 0, group, bus|
+    ^this.new(ESynthDef.note, [portamento: 0, note: 60, bend: 0], group, \control, bus, 0);
+  }
+
   *mod { |inbus, amt = 0, group, bus|
     if (inbus.class != Bus) { "inbus must be a Bus".warn; ^false };
     ^this.new(ESynthDef.mod, [in: inbus, amt: amt], group, inbus.rate, bus, 1);
@@ -123,7 +127,7 @@ ESUnit {
     // does not free mod
     var paramindex = this.getParamIndex(param);
     mods[paramindex] = nil;
-    synth.set(def.params[paramindex].modName, 0);
+    synth.set(def.params[paramindex + modOffset].modName, 0);
   }
 
   modAt { |param|
