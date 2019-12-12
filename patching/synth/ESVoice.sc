@@ -40,7 +40,7 @@ ESVoice {
       ESUnit.mod(oscbus, 0, [group, \addToTail], stbus.subBus(1))
     ];
     filtgroups = { Group(group, \addToTail) }.dup(numfilts/2);
-    amp = ESUnit.amp(\VCA, [inmono: monobus, instereo: stbus, velbus: velbus, gatebus: gatebus, env: 1], [group, \addToTail], 0);
+    amp = ESUnit.amp(\VCA, [inmono: monobus, instereo: stbus, notebus: notebus, velbus: velbus, gatebus: gatebus, env: 1], [group, \addToTail], 0);
   }
 
   free {

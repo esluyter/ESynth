@@ -58,7 +58,7 @@ ESynth {
       \res, \kr,
       \mod, \kr,
       {
-        ~cutoff = ~cutoff * ((~env + ~vel) * 100).midiratio;
+        ~cutoff = ~cutoff * ((~env + ~vel) * 100 + (~key * 1.05)).midiratio;
         HouvilainenFilter.ar(~in, ~cutoff, ~res, ~type);
       }
     );
@@ -66,7 +66,7 @@ ESynth {
     ESynthDef.amp(\VCA,
       \pan, [\ar, [-1, 1, \lin, 0.0, 0], 0.01, 10, true],
       {
-        (Pan2.ar(~inmono, ~pan) + Balance2.ar(~instereo[0], ~instereo[1], ~pan)) * ~env;
+        (Pan2.ar(~inmono, ~pan) + Balance2.ar(~instereo[0], ~instereo[1], ~pan)) * ~env * ~key.dbamp;
       }
     );
   }
