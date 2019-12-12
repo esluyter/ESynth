@@ -14,8 +14,7 @@ each param has:
 
 /*
 next up in synth land:
-- key control of filter cutoff
-- LFOs that do all the things they're meant to (one shot, retrig, global, random, blah blah)
+- LFOs that do all the things they're meant to (gated, global, random, blah blah)
 - Fill out LFOs and oscs and filts
 - add filter mod?
 - handle freeing and cmd-period a little more gracefully?
@@ -28,6 +27,17 @@ moving into model incorporation:
 */
 
 
+e.free
+e = ESynth(s, nil, 8);
+e.setAmp(\key, -0.4);
+e.putOsc(0, \Noise, [pink: 0.1]);
+e.putFilt(0, \Houvilainen, [cutoff: 500, type: 1, res: 0.95, key: 1]);
+e.putLFO(0, \Noise, \control, [interp: 2, freq: 1], true);
+e.putLFO(1, \Noise, \control, [interp: 1, freq: 0.5], true);
+e.addMod(1, { |v| v.lfos[0] }, \freq, 0.1);
+e.addMod(0, { |v| v.filts[0] }, \cutoff, 0.003);
+
+e.setAmp(\key, 0.1);
 e.putOsc(0, \VCO, [saw: 0.1, sqr: 0.1 ]);
 e.putFilt(0, \Houvilainen, [cutoff: 100, res: 0, type: 4, env: 0.7, atk: 3, dec: 5, sus: 0.5, rel: 0.5]);
 e.putFilt(1, \Houvilainen, [cutoff: 200, res: 0, type: 3, env: 0.7, atk: 3, dec: 5, sus: 0.5, rel: 0.5]);
@@ -42,6 +52,7 @@ e.addMod(0, { |v| v.amp }, \dec, 0.3)
 
 e = ESynth(s, nil, 8);
 e.free
+
 
 (
 MIDIClient.init;
@@ -80,13 +91,6 @@ e.setAmp(\atk, 0.01);
 e.setFilt(0, \atk, 0.7, \vel, 1, \env, 1)
 e.setFilt(1, \atk, 1.2, \vel, 1, \env, 1)
 
-(72 * 2).midiratio
-(
-var unit;
-try { unit = e.voices[0].lfos[0].modAt(\freq) };
-unit;
-)
-e.addMod(1, { |v| v.lfos[0] }, \freq, 0.1);
 
 
 e.putOsc(0, \VCO);

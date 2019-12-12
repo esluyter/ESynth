@@ -77,6 +77,13 @@ ESynthDef {
       e[\env] = LinSelectX.kr(velamt, [1, velin * 2]) * envamt * env;
     };
     e[\vel] = LinSelectX.kr(envamt, [In.kr(\velbus.ir) * velamt, 0]);
+
+    if (e[\note].isNil && (type != \mod)) {
+      var keyamt = e[\key] ?? 1;
+      var note = In.kr(\notebus.ir);
+      e[\note] = note;
+      e[\key] = ((note - 48) * keyamt);
+    };
     ^e;
   }
 
@@ -115,7 +122,6 @@ ESynthDef {
     # typelist, params, arfunc = this.prParseConstructorArgs(args, true);
     filts[name] = this.new(\filt, name, nil, arfunc, typelist, params, {
       ~in = In.ar(\out.kr);
-      ~note = In.kr(\notebus.ir);
       ~gate = In.kr(\gatebus.ir);
     }, true);
     ^filts[name];
@@ -145,7 +151,7 @@ ESynthDef {
     # func1, func2 = args;
 
     if (addEnvParams) {
-      params = [ESParam(\key), ESParam(\vel), ESParam(\env)] ++ params ++ [
+      params = [ESParam(\key, \control, [-1, 1, \lin, 0, 0]), ESParam(\vel), ESParam(\env)] ++ params ++ [
         ESParam('del', \control, [0, 10, 4], 0.03),
         ESParam('atk', \control, [0.001, 20, 8], 0.1),
         ESParam('dec', \control, [0.001, 20, 8, 0.0, 0.5], 0.1),
@@ -172,5 +178,14 @@ ESynthDef {
   numChannels { |rate = 'audio'|
     var name = if (rate == 'audio') { this.arDefName } { this.krDefName };
     ^SynthDescLib.global[name].outputs[0].numberOfChannels;
+  }
+
+  kind { ^type } // ugh fix this
+
+  rates {
+    var ret = [];
+    if (krfunc.notNil) { ret = ret.add(\control) };
+    if (arfunc.notNil) { ret = ret.add(\audio) };
+    ^ret;
   }
 }
