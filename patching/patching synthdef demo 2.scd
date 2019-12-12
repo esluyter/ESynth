@@ -14,7 +14,6 @@ each param has:
 
 /*
 next up in synth land:
-- key control of filter cutoff
 - LFOs that do all the things they're meant to (gated, global, random, blah blah)
 - Fill out LFOs and oscs and filts
 - add filter mod?

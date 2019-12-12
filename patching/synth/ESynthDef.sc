@@ -179,4 +179,13 @@ ESynthDef {
     var name = if (rate == 'audio') { this.arDefName } { this.krDefName };
     ^SynthDescLib.global[name].outputs[0].numberOfChannels;
   }
+
+  kind { ^type } // ugh fix this
+
+  rates {
+    var ret = [];
+    if (krfunc.notNil) { ret = ret.add(\control) };
+    if (arfunc.notNil) { ret = ret.add(\audio) };
+    ^ret;
+  }
 }
