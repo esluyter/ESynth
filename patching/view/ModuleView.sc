@@ -77,7 +77,7 @@ ModuleView : SCViewHolder {
 
       if (curInlet.notNil) {
         var inletPoint = this.getInletPoint(curInlet);
-        tooltip.string_(model.params[curInlet].name)
+        tooltip.string_(model.params[curInlet + this.class.inletOffset].name)
           .visible_(true)
           .bounds_(Rect(inletPoint.x - 15, inletPoint.y - 13, 30, 10));
       } {
@@ -193,7 +193,7 @@ ModuleView : SCViewHolder {
       };
       (model.params.size - this.class.inletOffset).do { |i|
         Pen.addRoundedRect(Rect(13 + this.prOffsetXInlet(i), 1, 6, 4), 1, 1);
-        if (curInlet == (i + this.class.inletOffset)) {
+        if (curInlet == i) {
           Pen.fillColor = Color.white;
           Pen.strokeColor = Color.white;
           Pen.width = 1;
@@ -224,14 +224,18 @@ ModuleView : SCViewHolder {
     (model.params.size - this.class.inletOffset).do { |i|
       inlet = Point(16 + this.prOffsetXInlet(i), 3);
       if (((inlet.x - point.x).abs < 5) && ((inlet.y - point.y).abs < 4)) {
-        ^(i + this.class.inletOffset);
+        ^i;
       };
     };
     ^nil;
   }
 
-  getInletPoint { |num = 0|
+  getInletPointNoOffset { |num = 0|
     ^Point(view.bounds.left + 16 + this.prOffsetX(num), view.bounds.top + 3);
+  }
+
+  getInletPoint { |num = 0|
+    ^Point(view.bounds.left + 16 + this.prOffsetXInlet(num), view.bounds.top + 3);
   }
 
   getOutletPoint { |num = 0|

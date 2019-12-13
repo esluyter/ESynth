@@ -2,6 +2,7 @@ ESModule {
   var <kind, <def, <rate;
   var <list, <params;
   var <type, <envType, <global;
+  var patchCords;
 
   *newList { |list, def, rate = \control|
     ^this.new(list.kind, def, rate).initList(list);
@@ -51,11 +52,11 @@ ESModule {
     };
     this.rate_(rate);
     this.prMakeParams(copyParams);
+    this.prInitPatchCords(copyPatchCords);
     this.type_(0);
     this.envType_(0);
     this.global_(true);
     this.changed(\def, this);
-    //list.changed(\patchCords);
     ^this;
   }
 
@@ -82,6 +83,17 @@ ESModule {
       if (copyParams) { param.value_(params[i].value) };
       param;
     };
+  }
+  prInitPatchCords { |copyPatchCords = false|
+    var oldPatchCords = patchCords;
+    var numPatchCords = min(this.maxMods, (params.size - this.modOffset));
+    patchCords = nil.dup(numPatchCords);
+    if (copyPatchCords) {
+      min(oldPatchCords.size, numPatchCords).do { |i|
+        patchCords[i] = oldPatchCords[i];
+      };
+    };
+    list.changed(\patchCords);
   }
 
   defs { ^ESynthDef.perform((kind ++ \s).asSymbol) }
@@ -147,15 +159,28 @@ ESModule {
 
   index { ^list.indexOf(this); }
 
-  patchFrom { |fromLFO, toInlet|
-    // TODO
-    //list.changed(\patchCords);
+  patchTo { |module, toInlet = 0|
+    if (kind != \lfo) { ^false };
+    module.patchFrom(this, toInlet);
+  }
+
+  patchFrom { |fromLFO, toInlet = 0|
+    if (fromLFO.isNil) {
+      patchCords[toInlet] = nil;
+    } {
+      if (toInlet < params.size) {
+        patchCords[toInlet] = ESMPatchCord(fromLFO, this, toInlet);
+      }
+    };
+    list.changed(\patchCords);
   }
 
   patchCords {
-    // TODO
-    ^[];
+    ^patchCords.select(_.notNil);
   }
+
+  modOffset { if (def.notNil) { ^def.modOffset } { ^0 } }
+  maxMods { if (def.notNil) { ^def.maxMods } { ^0 } }
 
   // to forward getters and setters of param values
   doesNotUnderstand { |selector ... args|

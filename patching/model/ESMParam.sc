@@ -18,4 +18,5 @@ ESMParam {
   input_ { |value| cv.input_(value); ^this; }
 
   index { ^parent.params.indexOf(this); }
+  modIndex { ^(this.index - parent.def.modOffset) }
 }

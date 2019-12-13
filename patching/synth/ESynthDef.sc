@@ -1,13 +1,13 @@
 ESynthDef {
   classvar <mod, <note, <lfos, <oscs, <filts, <amps;
-  var <type, <name, <krfunc, <arfunc, <typelist, <params, <envirFunc, <autoEnv;
+  var <type, <name, <krfunc, <arfunc, <typelist, <params, <envirFunc, <autoEnv, <maxMods, <modOffset;
 
   *initClass {
     Class.initClassTree(ServerBoot);
     Class.initClassTree(SynthDescLib);
     Class.initClassTree(ControlSpec);
-    mod = this.new(\mod, \mod, { In.kr(\in.ir) * ~amt }, { In.ar(\in.ir) * ~amt }, nil, [ESParam(\amt, \control, [-1, 1])]);
-    note = this.new(\note, \note, { ~note.lag2(~portamento) + ~bend }, nil, nil, [ESParam(\portamento), ESParam(\note, \control, [0, 127]), ESParam(\bend, \control, [-12, 12])]);
+    mod = this.new(\mod, \mod, { In.kr(\in.ir) * ~amt }, { In.ar(\in.ir) * ~amt }, nil, [ESParam(\amt, \control, [-1, 1])], maxMods: 1);
+    note = this.new(\note, \note, { ~note.lag2(~portamento) + ~bend }, nil, nil, [ESParam(\portamento), ESParam(\note, \control, [0, 127]), ESParam(\bend, \control, [-12, 12])], maxMods: 0);
     lfos = ();
     oscs = ();
     filts = ();
@@ -87,9 +87,9 @@ ESynthDef {
     ^e;
   }
 
-  *new { |type, name, krfunc, arfunc, typelist, params, envirFunc, autoEnv = false|
+  *new { |type, name, krfunc, arfunc, typelist, params, envirFunc, autoEnv = false, maxMods = 8, modOffset = 0|
     envirFunc = envirFunc ? {};
-    ^super.newCopyArgs(type, name, krfunc, arfunc, typelist, params, envirFunc, autoEnv).init;
+    ^super.newCopyArgs(type, name, krfunc, arfunc, typelist, params, envirFunc, autoEnv, maxMods, modOffset).init;
   }
 
   init {
@@ -103,7 +103,7 @@ ESynthDef {
       ~note = In.kr(\notebus.ir);
       ~gate = In.kr(\gatebus.ir);
       ~mod = In.kr(\modbus.ir);
-    });
+    }, false, 5);
     ^lfos[name];
   }
 
@@ -113,7 +113,7 @@ ESynthDef {
     oscs[name] = this.new(\osc, name, nil, arfunc, typelist, params, {
       ~note = In.kr(\notebus.ir);
       ~vel = In.kr(\velbus.ir);
-    });
+    }, false, 8);
     ^oscs[name];
   }
 
@@ -123,7 +123,7 @@ ESynthDef {
     filts[name] = this.new(\filt, name, nil, arfunc, typelist, params, {
       ~in = In.ar(\out.kr);
       ~gate = In.kr(\gatebus.ir);
-    }, true);
+    }, true, 8, 3);
     ^filts[name];
   }
 
@@ -134,7 +134,7 @@ ESynthDef {
       ~inmono = In.ar(\inmono.ir);
       ~instereo = In.ar(\instereo.ir, 2);
       ~gate = In.kr(\gatebus.ir);
-    }, true);
+    }, true, 6, 3);
     ^amps[name];
   }
 

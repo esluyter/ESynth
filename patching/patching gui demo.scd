@@ -1,4 +1,14 @@
 (
+~lfos = ESModuleList(\lfo, 20);
+~oscs = ESModuleList(\osc, 6);
+~oscs[0].def_(\VCO);
+~oscs[1].def_(\VCO);
+~oscs[3].def_(\VCO);
+~oscs[4].def_(\Noise);
+~filts = ESModuleList(\filt, 4);
+~filts[0].def_(\Houvilainen);
+~amps = ESModuleList(\amp, 1);
+
 Window.closeAll;
 w = Window.new("Lines", Rect(0, 200, 880, 975)).front;
 w.acceptsMouseOver = true;
@@ -14,8 +24,6 @@ v = UserView.new(w, Rect(0, 0, w.bounds.width, w.bounds.height));
   };
 };
 
-//~lfos = ModuleList(LFONil, 20);
-
 ~lfoviews = ~lfos.collect { |lfo, i|
   var row = i.div(5);
   var col = i - (row * 5);
@@ -23,15 +31,6 @@ v = UserView.new(w, Rect(0, 0, w.bounds.width, w.bounds.height));
   LFOView(v, Rect(170 * col + indent + 14, 105 * row + 12, 153, 75), lfo);
   // 1px extra for line, 3px extra for dots
 };
-//~lfoviews[0].knobs[0].color
-
-//~lfos[0].rate
-
-//~oscs = ModuleList(OscNil, 6);
-//~oscs[0].class_(OscVCO);
-//~oscs[1].class_(OscVCO);
-//~oscs[3].class_(OscVCO);
-//~oscs[4].class_(OscNoise);
 
 ~oscviews = ~oscs.collect { |osc, i|
   var row = i.div(3);
@@ -40,16 +39,11 @@ v = UserView.new(w, Rect(0, 0, w.bounds.width, w.bounds.height));
   OscView(v, Rect(270 * col + indent + 14, 105 * row + 442, 253, 75), osc);
 };
 
-//~filts = ModuleList(FiltNil, 4);
-//~filts[0].class_(FiltHouvilainen);
-
 ~filtviews = ~filts.collect { |filt, i|
   var row = i.div(2);
   var col = i - (row * 2);
   FiltView(v, Rect(370 * col + 14, 105 * row + 667, 353, 75), filt);
 };
-
-//~amps = ModuleList(AmpVCA, 1);
 
 ~ampviews = [AmpView(v, Rect(14, 887, 283, 75), ~amps[0])];
 
@@ -69,11 +63,13 @@ v.drawFunc = { |v|
   */
 
   Pen.width = 2.5;
+//  ~lfos.patchCords[0].toParam.index
   ~lfos.patchCords.do { |patchCord|
     ~patchCord.(~lfoviews[patchCord.fromIndex].getOutletPoint, ~lfoviews[patchCord.toIndex].getInletPoint(patchCord.toInlet));
     Pen.strokeColor = patchCord.color;
     Pen.stroke;
   };
+  //~oscs.patchCords[0].dump
   ~oscs.patchCords.do { |patchCord|
     ~patchCord.(~lfoviews[patchCord.fromIndex].getOutletPoint, ~oscviews[patchCord.toIndex].getInletPoint(patchCord.toInlet));
     Pen.strokeColor = patchCord.color;
@@ -95,12 +91,12 @@ v.drawFunc = { |v|
   ~oscviews.do { |osc|
     ~patchCord.(osc.getOutletPoint(0), plusin, false);
   };
-  ~patchCord.(plusout, ~filtviews[0].getInletPoint(0), false);
-  ~patchCord.(plusout, ~filtviews[1].getInletPoint(0), false);
-  ~patchCord.(~filtviews[0].getOutletPoint(0), ~filtviews[2].getInletPoint(0), false);
-  ~patchCord.(~filtviews[1].getOutletPoint(0), ~filtviews[3].getInletPoint(0), false);
-  ~patchCord.(~filtviews[2].getOutletPoint(0), ~ampviews[0].getInletPoint(0), false);
-  ~patchCord.(~filtviews[3].getOutletPoint(0), ~ampviews[0].getInletPoint(1), false);
+  ~patchCord.(plusout, ~filtviews[0].getInletPointNoOffset(0), false);
+  ~patchCord.(plusout, ~filtviews[1].getInletPointNoOffset(0), false);
+  ~patchCord.(~filtviews[0].getOutletPoint(0), ~filtviews[2].getInletPointNoOffset(0), false);
+  ~patchCord.(~filtviews[1].getOutletPoint(0), ~filtviews[3].getInletPointNoOffset(0), false);
+  ~patchCord.(~filtviews[2].getOutletPoint(0), ~ampviews[0].getInletPointNoOffset(0), false);
+  ~patchCord.(~filtviews[3].getOutletPoint(0), ~ampviews[0].getInletPointNoOffset(1), false);
   Pen.stroke;
 };
 

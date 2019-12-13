@@ -1,15 +1,15 @@
 ESUnit {
   var <def, <args, <group,
       <rate, // \audio or \control
-      <bus, <freebus = false, <synth, <mods, <modOffset, <outputMods, <fromUnit, <toUnit, <paramindex;
+      <bus, <freebus = false, <synth, <mods, <outputMods, <fromUnit, <toUnit, <paramindex;
 
   *note { |portamento = 0, group, bus|
-    ^this.new(ESynthDef.note, [portamento: 0, note: 60, bend: 0], group, \control, bus, 0);
+    ^this.new(ESynthDef.note, [portamento: 0, note: 60, bend: 0], group, \control, bus);
   }
 
   *mod { |inbus, amt = 0, group, bus|
     if (inbus.class != Bus) { "inbus must be a Bus".warn; ^false };
-    ^this.new(ESynthDef.mod, [in: inbus, amt: amt], group, inbus.rate, bus, 1);
+    ^this.new(ESynthDef.mod, [in: inbus, amt: amt], group, inbus.rate, bus);
   }
 
   *modUnits { |fromUnit, toUnit, param, amt = 0, group|
@@ -22,22 +22,22 @@ ESUnit {
   }
 
   *lfo { |name, args, group, rate = \control, bus|
-    ^this.new(ESynthDef.lfos.at(name), args, group, rate, bus, 5);
+    ^this.new(ESynthDef.lfos.at(name), args, group, rate, bus);
   }
 
   *osc { |name, args, group, bus|
-    ^this.new(ESynthDef.oscs.at(name), args, group, \audio, bus, 8);
+    ^this.new(ESynthDef.oscs.at(name), args, group, \audio, bus);
   }
 
   *filt { |name, args, group, bus|
-    ^this.new(ESynthDef.filts.at(name), args, group, \audio, bus, 8, 3);
+    ^this.new(ESynthDef.filts.at(name), args, group, \audio, bus);
   }
 
   *amp { |name, args, group, bus|
-    ^this.new(ESynthDef.amps.at(name), args, group, \audio, bus, 6, 3);
+    ^this.new(ESynthDef.amps.at(name), args, group, \audio, bus);
   }
 
-  *new { |def, args, group, rate = \audio, bus, maxmods = 8, modOffset = 0|
+  *new { |def, args, group, rate = \audio, bus|
     var addAction = \addToHead;
     if (group.isArray) {
       addAction = group[1];
@@ -45,12 +45,11 @@ ESUnit {
     };
     group = group ?? Server.default.defaultGroup;
     if (bus.notNil) { bus = bus.asBus(rate) };
-    ^super.newCopyArgs(def, args.asArray, group, rate, bus).init(addAction, maxmods, modOffset);
+    ^super.newCopyArgs(def, args.asArray, group, rate, bus).init(addAction);
   }
 
   init { |addAction, maxmods, offset|
-    modOffset = offset;
-    mods = nil ! maxmods;
+    mods = nil ! def.maxMods;
     outputMods = [];
     if (bus.isNil) {
       freebus = true;
@@ -102,9 +101,9 @@ ESUnit {
     synth.set(*args);
   }
 
-  getParamIndex { |param|
+  getParamModIndex { |param|
     if (param.isSymbol) {
-      ^this.params.collect(_.name).indexOf(param) - modOffset;
+      ^this.params.collect(_.name).indexOf(param) - def.modOffset;
     } {
       ^param;
     };
@@ -113,11 +112,11 @@ ESUnit {
   params { ^def.params; }
 
   putMod { |param, mod|
-    var paramindex = this.getParamIndex(param);
+    var paramindex = this.getParamModIndex(param);
     mods[paramindex].free;
     if (mod.notNil) {
       mods[paramindex] = mod;
-      synth.set(def.params[paramindex + modOffset].modName, mod.bus.asMap);
+      synth.set(def.params[paramindex + def.modOffset].modName, mod.bus.asMap);
     } {
       this.removeMod(paramindex);
     };
@@ -125,13 +124,13 @@ ESUnit {
 
   removeMod { |param|
     // does not free mod
-    var paramindex = this.getParamIndex(param);
+    var paramindex = this.getParamModIndex(param);
     mods[paramindex] = nil;
-    synth.set(def.params[paramindex + modOffset].modName, 0);
+    synth.set(def.params[paramindex + def.modOffset].modName, 0);
   }
 
   modAt { |param|
-    ^mods[this.getParamIndex(param)];
+    ^mods[this.getParamModIndex(param)];
   }
 
   addOutputMod { |mod|
