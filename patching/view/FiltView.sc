@@ -1,5 +1,5 @@
 FiltView : ModuleView {
-  classvar <spacerSpots = #[3, 6], <maxParams = 11;
+  classvar <spacerSpots = #[3, 8], <maxParams = 11;
   classvar <inletOffset = 3, <arInlets = 1;
   var envMenu;
 

@@ -1,5 +1,5 @@
 AmpView : ModuleView {
-  classvar <spacerSpots = #[4], <maxParams = 9;
+  classvar <spacerSpots = #[3, 8], <maxParams = 9;
   classvar <inletOffset = 3, <arInlets = 2;
   var envMenu;
 

@@ -14,7 +14,7 @@ v = UserView.new(w, Rect(0, 0, w.bounds.width, w.bounds.height));
   };
 };
 
-~lfos = ModuleList(LFONil, 20);
+//~lfos = ModuleList(LFONil, 20);
 
 ~lfoviews = ~lfos.collect { |lfo, i|
   var row = i.div(5);
@@ -27,11 +27,11 @@ v = UserView.new(w, Rect(0, 0, w.bounds.width, w.bounds.height));
 
 //~lfos[0].rate
 
-~oscs = ModuleList(OscNil, 6);
-~oscs[0].class_(OscVCO);
-~oscs[1].class_(OscVCO);
-~oscs[3].class_(OscVCO);
-~oscs[4].class_(OscNoise);
+//~oscs = ModuleList(OscNil, 6);
+//~oscs[0].class_(OscVCO);
+//~oscs[1].class_(OscVCO);
+//~oscs[3].class_(OscVCO);
+//~oscs[4].class_(OscNoise);
 
 ~oscviews = ~oscs.collect { |osc, i|
   var row = i.div(3);
@@ -40,8 +40,8 @@ v = UserView.new(w, Rect(0, 0, w.bounds.width, w.bounds.height));
   OscView(v, Rect(270 * col + indent + 14, 105 * row + 442, 253, 75), osc);
 };
 
-~filts = ModuleList(FiltNil, 4);
-~filts[0].class_(FiltHouvilainen);
+//~filts = ModuleList(FiltNil, 4);
+//~filts[0].class_(FiltHouvilainen);
 
 ~filtviews = ~filts.collect { |filt, i|
   var row = i.div(2);
@@ -49,7 +49,7 @@ v = UserView.new(w, Rect(0, 0, w.bounds.width, w.bounds.height));
   FiltView(v, Rect(370 * col + 14, 105 * row + 667, 353, 75), filt);
 };
 
-~amps = ModuleList(AmpVCA, 1);
+//~amps = ModuleList(AmpVCA, 1);
 
 ~ampviews = [AmpView(v, Rect(14, 887, 283, 75), ~amps[0])];
 

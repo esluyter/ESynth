@@ -139,7 +139,7 @@ ESynthDef {
   }
 
   *prParseConstructorArgs { |args, addEnvParams = false|
-    var typelist, params = [], func1, func2;
+    var typelist = [], params = [], func1, func2;
 
     if (args[0].isCollection) { typelist = args[0]; args = args[1..] };
 
@@ -151,13 +151,15 @@ ESynthDef {
     # func1, func2 = args;
 
     if (addEnvParams) {
-      params = [ESParam(\key, \control, [-1, 1, \lin, 0, 0]), ESParam(\vel), ESParam(\env)] ++ params ++ [
+      params = [
+        ESParam(\key, \control, [-1, 1, \lin, 0, 0]), ESParam(\vel),
+        ESParam(\env),
         ESParam('del', \control, [0, 10, 4], 0.03),
         ESParam('atk', \control, [0.001, 20, 8], 0.1),
         ESParam('dec', \control, [0.001, 20, 8, 0.0, 0.5], 0.1),
         ESParam('sus', \control, \amp.asSpec.copy.default_(1)),
         ESParam('rel', \control, [0.001, 20, 8], 0.1)
-      ]
+      ] ++ params;
     };
 
     ^[typelist, params, func1, func2];

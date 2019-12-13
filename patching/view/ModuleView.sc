@@ -126,9 +126,9 @@ ModuleView : SCViewHolder {
 
   model_ { |value|
     model = value;
-    classMenu.items_(model.classes.collect(_.displayName))
-      .value_(model.classes.indexOf(model.class))
-      .visible_(model.classes.size > 0);
+    classMenu.items_(model.displayNames)
+      .value_(model.displayNames.indexOf(model.displayName))
+      .visible_(model.defs.size > 0);
     typeMenu.items_(model.types)
       .value_(model.type)
       .visible_(model.types.size > 0);
@@ -165,8 +165,8 @@ ModuleView : SCViewHolder {
         boxes[i].signal(\value).connectTo(param.cv.valueSlot);
         knobs[i].value_(param.cv.input);
       };
-      model.signal(\replaced).connectTo(this.methodSlot("model_(value)"));
-      classMenu.signal(\value).connectTo(model.methodSlot("classInput_(value)"));
+      model.signal(\def).connectTo(this.methodSlot("model_(value)"));
+      classMenu.signal(\value).connectTo(model.methodSlot("defInput_(value)"));
       typeMenu.signal(\value).connectTo(model.methodSlot("type_(value)"));
     };
     this.prMakeDrawFunc;
