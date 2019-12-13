@@ -143,7 +143,7 @@ ESynthDef {
 
     if (args[0].isCollection) { typelist = args[0]; args = args[1..] };
 
-    while { args[0].isSymbol or: args[0].isString } {
+    while { (args[0].class == Symbol) or: args[0].isString } {
       params = params.add(this.prParseParam(args[0], args[1]));
       args = args[2..];
     };
