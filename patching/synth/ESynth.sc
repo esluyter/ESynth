@@ -6,7 +6,9 @@ ESynth {
   *initClass {
     Class.initClassTree(ESynthDef);
 
+    // TODO: make gate function
     ESynthDef.lfo(\Sin,
+      [\random, \gate],
       \delay, [\kr, [0, 10, 4], 0.03],
       \freq, [\ar, [0.01, 200, 6, 0, 2], 0.5],
       \key, \kr,
@@ -27,6 +29,18 @@ ESynth {
       }, {
         Select.ar(~interp, [LFDNoise0.ar(~freq), LFDNoise1.ar(~freq), LFNoise2.ar(~freq), LFDNoise3.ar(~freq)]) * XLine.kr(0.01, 1, ~delay);
       }
+    );
+
+    // TODO: make this work
+    ESynthDef.lfo(\Env,
+      [\sustain, \oneshot, \retrig],
+      \del, [\kr, [0, 10, 4], 0.03],
+      \atk, [\kr, [0.001, 20, 8], 0.1],
+      \dec, [\kr, [0.001, 20, 8, 0.0, 0.5], 0.1],
+      \sus, [\kr,  \amp.asSpec.copy.default_(1)],
+      \rel, [\kr, [0.001, 20, 8], 0.1],
+      { DC.kr(0) },
+      { DC.ar(0) }
     );
 
     ESynthDef.osc(\VCO,

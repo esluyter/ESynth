@@ -22,7 +22,7 @@ ESModule {
 
   def_ { |value, rate = \control, copyParams = false, copyPatchCords = true|
     // TODO: copy patch cords..
-    if (value.isNil or: (value == '- empty -')) {
+    if (value.isNil or: (value == '-empty-')) {
       def = nil;
       rate = nil;
     } {
@@ -99,7 +99,7 @@ ESModule {
   defs { ^ESynthDef.perform((kind ++ \s).asSymbol) }
   defNames { ^this.defs.keys.asArray.sort }
   displayNames {
-    var ret = ['- empty -'];
+    var ret = ['-empty-'];
     this.defNames.do { |defName|
       var def = this.defs[defName];
       def.rates.do { |rate|
@@ -113,7 +113,7 @@ ESModule {
     ^ret;
   }
   displayName {
-    if (def.isNil) { ^'- empty -' };
+    if (def.isNil) { ^'-empty-' };
     if (rate == \control) { ^("LF " ++ def.name).asSymbol };
     if (kind == \lfo) { ^("AR " ++ def.name).asSymbol };
     ^def.name.asSymbol;
