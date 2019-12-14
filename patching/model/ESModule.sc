@@ -128,8 +128,9 @@ ESModule {
     if (this.types.size == 0) {
       type = nil;
     } {
-      type = value;
+      type = value.clip(0, this.types.size - 1);
     };
+    this.changed(\type, type);
   }
 
   envTypes {
@@ -141,8 +142,9 @@ ESModule {
     if (this.envTypes.size == 0) {
       envType = nil;
     } {
-      envType = value;
+      envType = value.clip(0, this.envTypes.size - 1);
     };
+    this.changed(\envType, envType);
   }
 
   global_ { |value|
@@ -155,6 +157,7 @@ ESModule {
         global = false;
       };
     };
+    this.changed(\global, global);
   }
 
   index { ^list.indexOf(this); }
@@ -165,6 +168,7 @@ ESModule {
   }
 
   patchFrom { |fromLFO, toInlet = 0|
+    toInlet = this.prGetModIndex(toInlet);
     if (fromLFO.isNil) {
       patchCords[toInlet] = nil;
     } {
@@ -177,6 +181,17 @@ ESModule {
 
   patchCords {
     ^patchCords.select(_.notNil);
+  }
+  patchAt { |inlet|
+    ^patchCords[this.prGetModIndex(inlet)]
+  }
+
+  prGetModIndex { |param|
+    if (param.isSymbol) {
+      ^params.collect(_.name).indexOf(param) - this.modOffset;
+    } {
+      ^param;
+    };
   }
 
   modOffset { if (def.notNil) { ^def.modOffset } { ^0 } }

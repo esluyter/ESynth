@@ -14,6 +14,7 @@ ESMParam {
   }
 
   value { ^cv.value; }
+  value_ { |value| cv.value_(value); ^this; }
   input { ^cv.input; }
   input_ { |value| cv.input_(value); ^this; }
 

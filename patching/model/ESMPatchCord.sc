@@ -1,5 +1,5 @@
 ESMPatchCord {
-  var <fromLFO, <toModule, <toInlet, <params, <color;
+  var <fromLFO, <toModule, <toInlet, <params, patchCords, <color;
 
   *new { |fromLFO, toModule, toInlet, amt = 0, color|
     ^super.newCopyArgs(fromLFO, toModule, toInlet).init(amt, color);
@@ -8,6 +8,7 @@ ESMPatchCord {
   init { |amt, argcolor|
     params = [ESMParam(this, ESynthDef.mod.params[0])];
     color = argcolor ?? Color.rand;
+    patchCords = [nil];
   }
 
   amt { ^params[0].value }
@@ -16,12 +17,36 @@ ESMPatchCord {
     ^this;
   }
 
-  fromList { ^fromLFO.list }
   fromIndex { ^fromLFO.index }
-  toList { ^toModule.list } // this needs work
-  toIndex { ^toModule.index } // also needs work
+  toIndex {
+    if (toModule.class == ESModule) {
+      ^toModule.index;
+    } {
+      ^nil;
+    }
+  }
 
-  list { "Work on ESMPatchCord toList functionality".warn; ^nil }
-  index { "Work on ESMPatchCord toIndex functionality".warn; ^nil }
+  patchFrom { |fromLFO|
+    if (fromLFO.isNil) {
+      patchCords[0] = nil;
+    } {
+      patchCords[0] = ESMPatchCord(fromLFO, this, 0);
+    };
+    this.list.changed(\patchCords);
+  }
+
+  list { ^toModule.list }
+
+  patchCords {
+    ^patchCords.select(_.notNil);
+  }
+  patchAt { |inlet|
+    if ((inlet == 0) or: (inlet == \amt)) {
+      ^patchCords[0];
+    } {
+      ^nil;
+    };
+  }
+
   def { ^ESynthDef.mod }
 }

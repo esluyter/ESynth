@@ -21,6 +21,7 @@ ModuleView : SCViewHolder {
     view = UserView(parent, bounds).onClose_({ connections.free });
 
     this.prMakeMenus;
+    this.prMakeExtraMenus;
     this.prMakeParams;
     this.prMouseSetup(parent);
     this.prDropSetup;
@@ -36,7 +37,6 @@ ModuleView : SCViewHolder {
       .background_(Color.grey(0.04))
       .stringColor_(Color.white)
       .font_(Font.monospace.size_(8));
-    this.prMakeExtraMenus;
   }
 
   prMakeExtraMenus { } // override this
@@ -126,13 +126,6 @@ ModuleView : SCViewHolder {
 
   model_ { |value|
     model = value;
-    classMenu.items_(model.displayNames)
-      .value_(model.displayNames.indexOf(model.displayName))
-      .visible_(model.defs.size > 0);
-    typeMenu.items_(model.types)
-      .value_(model.type)
-      .visible_(model.types.size > 0);
-    this.prPopulateExtraMenus;
     (knobs ++ boxes ++ names).do(_.visible_(false));
     connections.free;
     connections = ConnectionList.make {
@@ -165,9 +158,17 @@ ModuleView : SCViewHolder {
         boxes[i].signal(\value).connectTo(param.cv.valueSlot);
         knobs[i].value_(param.cv.input);
       };
-      model.signal(\def).connectTo(this.methodSlot("model_(value)"));
+      classMenu.items_(model.displayNames)
+        .value_(model.displayNames.indexOf(model.displayName))
+        .visible_(model.defs.size > 0);
       classMenu.signal(\value).connectTo(model.methodSlot("defInput_(value)"));
+      model.signal(\def).connectTo(this.methodSlot("model_(value)"));
+      typeMenu.items_(model.types)
+        .value_(model.type)
+        .visible_(model.types.size > 0);
       typeMenu.signal(\value).connectTo(model.methodSlot("type_(value)"));
+      model.signal(\type).connectTo(typeMenu.valueSlot);
+      this.prPopulateExtraMenus;
     };
     this.prMakeDrawFunc;
   }

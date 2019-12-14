@@ -11,8 +11,7 @@ ESModuleList : List {
       size.collect { ESModule.newList(this) }
     );
   }
-
-  // review....
+  
   patchCords {
     ^this.collect(_.patchCords).flat;
   }

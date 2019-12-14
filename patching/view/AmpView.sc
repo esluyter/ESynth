@@ -12,5 +12,7 @@ AmpView : ModuleView {
 
   prPopulateExtraMenus {
     envMenu.items_(model.envTypes).value_(model.envType).visible_(model.envTypes.size > 0);
+    envMenu.signal(\value).connectTo(model.methodSlot("envType_(value)"));
+    model.signal(\envType).connectTo(envMenu.valueSlot);
   }
 }
