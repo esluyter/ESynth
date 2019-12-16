@@ -187,7 +187,7 @@ ESModule {
   }
 
   prGetModIndex { |param|
-    if (param.isSymbol) {
+    if (param.class == Symbol) {
       ^params.collect(_.name).indexOf(param) - this.modOffset;
     } {
       ^param;

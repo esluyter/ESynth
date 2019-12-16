@@ -108,7 +108,7 @@ ModuleView : SCViewHolder {
     }));
 
     view.beginDragAction = {
-      ("Dragging from " ++ curInlet).postln;
+      //("Dragging from " ++ curInlet).postln;
       [model, curInlet]
     };
   }

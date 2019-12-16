@@ -16,7 +16,7 @@ w.acceptsMouseOver = true;
 w.background_(Color(0.1, 0, 0.1));
 v = UserView.new(w, Rect(0, 0, w.bounds.width, w.bounds.height));
 
-~patchCord = { |p1, p2, makeKnob = true, patchCord|
+~patchCord = { |p1, p2, patchCord|
   var offset = Point(0, max(((p2.y - p1.y) / 2), 40));
   Pen.moveTo(p1);
   Pen.curveTo(p2, p1 + offset, p2 - offset);
@@ -24,29 +24,10 @@ v = UserView.new(w, Rect(0, 0, w.bounds.width, w.bounds.height));
     Pen.strokeColor = patchCord.color;
   };
   Pen.stroke;
-  if (makeKnob) {
-    var view = UserView(v, Rect(p2.x - 8, p2.y - 20, 16, 20))
-    .drawFunc_({ |v|
-      Pen.addRoundedRect(Rect(0, 0, 6, 4), 1, 1);
-      Pen.fillColor = Color.gray;
-      Pen.fill;
-    });
-    var knob = Knob(view, Rect(0, 4, 16, 16))
-    .mode_(\vert)
-    .color_([Color.gray(0.8), Color.white, Color.clear, Color.black])
-    .centered_(true)
-    .value_(0.5)
-    .mouseDownAction_({ |v, x, y, mod, buttNum, clickCount|
-      if (buttNum == 0 && (clickCount == 2)) {
-        //param.value_(param.spec.default);
-        knob.value_(0.5);
-      };
-    });
-    ~patchKnobs = ~patchKnobs.add(view);
-    if (patchCord.notNil) {
-      if (patchCord.patchCords.size > 0) {
-        ~patchCord.(~lfoviews[patchCord.patchCords[0].fromIndex].getOutletPoint, Point(p2.x - 5, p2.y - 18), patchCord: patchCord.patchCords[0]);
-      };
+  if (patchCord.notNil) {
+    ~patchKnobs = ~patchKnobs.add(PatchKnob(v, Rect(p2.x - 8, p2.y - 20, 16, 20), patchCord));
+    if (patchCord.patchCords.size > 0) {
+      ~patchCord.(~lfoviews[patchCord.patchCords[0].fromIndex].getOutletPoint, Point(p2.x - 5, p2.y - 18), patchCord: patchCord.patchCords[0]);
     };
   };
 };
@@ -61,29 +42,29 @@ v = UserView.new(w, Rect(0, 0, w.bounds.width, w.bounds.height));
 
     Pen.width = 2.5;
     ~lfos.patchCords.do { |patchCord|
-      ~patchCord.(~lfoviews[patchCord.fromIndex].getOutletPoint, ~lfoviews[patchCord.toIndex].getInletPoint(patchCord.toInlet), patchCord: patchCord);
+      ~patchCord.(~lfoviews[patchCord.fromIndex].getOutletPoint, ~lfoviews[patchCord.toIndex].getInletPoint(patchCord.toInlet), patchCord);
     };
     ~oscs.patchCords.do { |patchCord|
-      ~patchCord.(~lfoviews[patchCord.fromIndex].getOutletPoint, ~oscviews[patchCord.toIndex].getInletPoint(patchCord.toInlet), patchCord: patchCord);
+      ~patchCord.(~lfoviews[patchCord.fromIndex].getOutletPoint, ~oscviews[patchCord.toIndex].getInletPoint(patchCord.toInlet), patchCord);
     };
     ~filts.patchCords.do { |patchCord|
-      ~patchCord.(~lfoviews[patchCord.fromIndex].getOutletPoint, ~filtviews[patchCord.toIndex].getInletPoint(patchCord.toInlet), patchCord: patchCord);
+      ~patchCord.(~lfoviews[patchCord.fromIndex].getOutletPoint, ~filtviews[patchCord.toIndex].getInletPoint(patchCord.toInlet), patchCord);
     };
     ~amps.patchCords.do { |patchCord|
-      ~patchCord.(~lfoviews[patchCord.fromIndex].getOutletPoint, ~ampviews[patchCord.toIndex].getInletPoint(patchCord.toInlet), patchCord: patchCord);
+      ~patchCord.(~lfoviews[patchCord.fromIndex].getOutletPoint, ~ampviews[patchCord.toIndex].getInletPoint(patchCord.toInlet), patchCord);
     };
 
     Pen.width = 2;
     Pen.strokeColor = Color.gray(0.4);
     ~oscviews.do { |osc|
-      ~patchCord.(osc.getOutletPoint(0), plusin, false);
+      ~patchCord.(osc.getOutletPoint(0), plusin);
     };
-    ~patchCord.(plusout, ~filtviews[0].getInletPointNoOffset(0), false);
-    ~patchCord.(plusout, ~filtviews[1].getInletPointNoOffset(0), false);
-    ~patchCord.(~filtviews[0].getOutletPoint(0), ~filtviews[2].getInletPointNoOffset(0), false);
-    ~patchCord.(~filtviews[1].getOutletPoint(0), ~filtviews[3].getInletPointNoOffset(0), false);
-    ~patchCord.(~filtviews[2].getOutletPoint(0), ~ampviews[0].getInletPointNoOffset(0), false);
-    ~patchCord.(~filtviews[3].getOutletPoint(0), ~ampviews[0].getInletPointNoOffset(1), false);
+    ~patchCord.(plusout, ~filtviews[0].getInletPointNoOffset(0));
+    ~patchCord.(plusout, ~filtviews[1].getInletPointNoOffset(0));
+    ~patchCord.(~filtviews[0].getOutletPoint(0), ~filtviews[2].getInletPointNoOffset(0));
+    ~patchCord.(~filtviews[1].getOutletPoint(0), ~filtviews[3].getInletPointNoOffset(0));
+    ~patchCord.(~filtviews[2].getOutletPoint(0), ~ampviews[0].getInletPointNoOffset(0));
+    ~patchCord.(~filtviews[3].getOutletPoint(0), ~ampviews[0].getInletPointNoOffset(1));
     Pen.stroke;
   };
 
@@ -128,3 +109,8 @@ v = UserView.new(w, Rect(0, 0, w.bounds.width, w.bounds.height));
 ~oscs[0].patchAt(\duty).patchAt(0).patchFrom(nil)
 ~oscs[0].patchAt(\duty).patchFrom(nil)
 ~oscs[0].patchFrom(nil, \duty)
+
+
+~oscs[0].patchAt(\tune).amt =
+
+~oscviews[0].dump

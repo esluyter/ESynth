@@ -32,7 +32,10 @@ ESMPatchCord {
     } {
       patchCords[0] = ESMPatchCord(fromLFO, this, 0);
     };
-    this.list.changed(\patchCords);
+    {
+      0.01.wait;
+      this.list.changed(\patchCords);
+    }.fork(AppClock);
   }
 
   list { ^toModule.list }
