@@ -15,8 +15,15 @@ PatchKnob : SCViewHolder {
     view = UserView(parent, bounds).onClose_({ connections.free })
       .drawFunc_({ |v|
         Pen.addRoundedRect(Rect(0, 0, 6, 4), 1, 1);
-        Pen.fillColor = Color.gray;
-        Pen.fill;
+        if (overInlet) {
+          Pen.fillColor = Color.white;
+          Pen.strokeColor = Color.white;
+          Pen.width = 1;
+          Pen.fillStroke;
+        } {
+          Pen.fillColor = Color.gray;
+          Pen.fill;
+        };
       });
 
     knob = Knob(view, Rect(0, 4, 16, 16))
