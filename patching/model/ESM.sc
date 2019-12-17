@@ -1,24 +1,21 @@
 ESM {
+  var <numVoices;
   var <lfos, <oscs, <filts, <amps;
+  var <synth;
   var connections;
 
   *new { |numVoices = 8, numLFOs = 20, numOscs = 6, numFilts = 4|
-    ^super.new.init(numVoices, numLFOs, numOscs, numFilts);
+    ^super.newCopyArgs(numVoices).init(numLFOs, numOscs, numFilts).prDefaultConfig;
   }
 
-  init { |numVoices, numLFOs, numOscs, numFilts|
+  init { |numLFOs, numOscs, numFilts|
     lfos = ESModuleList(\lfo, numLFOs);
     oscs = ESModuleList(\osc, numOscs);
     filts = ESModuleList(\filt, numFilts);
     amps = ESModuleList(\amp, 1);
     connections = ConnectionList.make {
-      [lfos, oscs, filts, amps].do(_.connectTo({ |...args| args.postln }));
+      [lfos, oscs, filts, amps].do(_.connectTo({ |changedList, what| this.changed(what, changedList) }));
     };
-    this.prDefaultConfig;
-  }
-
-  free {
-    connections.free;
   }
 
   prDefaultConfig {
@@ -27,8 +24,25 @@ ESM {
     amps[0].def_(\VCA);
   }
 
+  startSynth { |server|
+    synth.free;
+    synth = ESynth(server, this, numVoices);
+  }
+
+  free {
+    connections.free;
+    synth.free;
+  }
+
   numLFOs { ^lfos.size }
   numOscs { ^oscs.size }
   numFilts { ^filts.size }
-  //numVoices { ^synth.numVoices }
+  patchCords {
+    ^(
+      lfo: lfos.patchCords,
+      osc: oscs.patchCords,
+      filt: filts.patchCords,
+      amp: amps.patchCords
+    )
+  }
 }
