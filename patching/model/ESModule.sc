@@ -99,7 +99,7 @@ ESModule {
   defs { ^ESynthDef.perform((kind ++ \s).asSymbol) }
   defNames { ^this.defs.keys.asArray.sort }
   displayNames {
-    var ret = ['-empty-'];
+    var ret = if (kind == \amp) { [] } { ['-empty-'] };
     this.defNames.do { |defName|
       var def = this.defs[defName];
       def.rates.do { |rate|

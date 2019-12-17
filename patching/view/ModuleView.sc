@@ -33,7 +33,7 @@ ModuleView : SCViewHolder {
       .background_(Color.grey(0.04))
       .stringColor_(Color.white)
       .font_(Font.monospace.size_(8));
-    typeMenu = PopUpMenu(view, Rect(110, 7, 66, 12))
+    typeMenu = PopUpMenu(view, Rect(this.bounds.width - 71, 7, 66, 12))
       .background_(Color.grey(0.04))
       .stringColor_(Color.white)
       .font_(Font.monospace.size_(8));

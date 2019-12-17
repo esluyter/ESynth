@@ -22,7 +22,6 @@ next up in synth land:
 moving into model incorporation:
 - change number of voices on the fly
 - init with model, synth is slave to model
-- simplify model a great deal! -- use ESynthDefs instead of classes
 ... probably in reverse order
 */
 
