@@ -14,7 +14,9 @@ ESM {
     filts = ESModuleList(\filt, numFilts);
     amps = ESModuleList(\amp, 1);
     connections = ConnectionList.make {
-      [lfos, oscs, filts, amps].do(_.connectTo({ |changedList, what| this.changed(what, changedList) }));
+      [lfos, oscs, filts, amps].do(_.connectTo({ |changedList, what|
+        this.changed(what, changedList)
+      }));
     };
   }
 

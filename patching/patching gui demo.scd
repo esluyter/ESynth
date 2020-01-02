@@ -2,9 +2,11 @@
 ~esm = ESM();
 
 Window.closeAll;
-w = Window.new("Lines", Rect(0, 200, 880, 975)).front;
-w.acceptsMouseOver = true;
-v = ESView.new(w, model: ~esm);
+~window = Window.new("Lines", Rect(0, 200, 880, 975)).front;
+~window.acceptsMouseOver = true;
+~esv = ESView.new(~window, model: ~esm);
+
+
 )
 
 ~esm.putLFO(1, 'Sin')

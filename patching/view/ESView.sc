@@ -10,7 +10,10 @@ ESView : SCViewHolder {
     bounds = bounds ?? Rect(0, 0, parent.bounds.width, parent.bounds.height);
     view = UserView(parent, bounds)
       .background_(Color(0.1, 0, 0.1))
-      .onClose_({ connections.free });
+      .onClose_({
+        connections.free;
+        [lfoViews, oscViews, filtViews, ampViews].do { |a| a.do(_.remove) };
+      });
   }
 
   model_ { |value|
