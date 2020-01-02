@@ -20,7 +20,7 @@ ESModule {
     this.def_(this.displayNames[value]);
   }
 
-  def_ { |value, rate = \control, copyParams = false, copyPatchCords = true|
+  def_ { |value, rate = \control, copyParams = false, copyPatchCords = true, global = true|
     // TODO: copy patch cords..
     if (value.isNil or: (value == '-empty-')) {
       def = nil;
@@ -55,7 +55,7 @@ ESModule {
     this.prInitPatchCords(copyPatchCords);
     this.type_(0);
     this.envType_(0);
-    this.global_(true);
+    this.global_(global);
     this.changed(\def, this);
     ^this;
   }

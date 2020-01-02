@@ -13,10 +13,10 @@ ModuleView : SCViewHolder {
   */
 
   *new { |parent, bounds, model|
-    ^super.new.init(parent, bounds, model);
+    ^super.new.init(parent, bounds).model_(model);
   }
 
-  init { |parent, bounds, argmodel|
+  init { |parent, bounds|
     bounds = bounds ?? Rect(0, 0, parent.bounds.width, parent.bounds.height);
     view = UserView(parent, bounds).onClose_({ connections.free });
 
@@ -25,7 +25,6 @@ ModuleView : SCViewHolder {
     this.prMakeParams;
     this.prMouseSetup(parent);
     this.prDropSetup;
-    this.model_(argmodel);
   }
 
   prMakeMenus {

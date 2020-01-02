@@ -34,6 +34,21 @@ ESM {
     synth.free;
   }
 
+  putLFO { |index, def, rate = \control, copyParams = false, copyPatchCords = true, global = true|
+    // TODO: fix global put in ESynthDef
+    lfos[index].def_(def, rate, copyParams, copyPatchCords, global);
+  }
+
+  putOsc { |index, def, copyParams = false, copyPatchCords = true|
+    oscs[index].def_(def, \audio, copyParams, copyPatchCords);
+  }
+
+  putFilt { |index, def, copyParams = false, copyPatchCords = true|
+    filts[index].def_(def, \audio, copyParams, copyPatchCords);
+  }
+
+  putAmp { /* TODO */ }
+
   numLFOs { ^lfos.size }
   numOscs { ^oscs.size }
   numFilts { ^filts.size }
