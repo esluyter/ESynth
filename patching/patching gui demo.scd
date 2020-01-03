@@ -4,7 +4,8 @@
 Window.closeAll;
 ~window = Window.new("Lines", Rect(0, 200, 880, 975)).front;
 ~window.acceptsMouseOver = true;
-~esv = ESView.new(~window, model: ~esm);
+~sv = ScrollView(~window, ~window.bounds.origin_(0@0));
+~esv = ESView.new(~sv, model: ~esm);
 
 ~esm.addDependant { |...args|
   var module = args.pop;
