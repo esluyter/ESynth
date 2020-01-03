@@ -6,8 +6,13 @@ Window.closeAll;
 ~window.acceptsMouseOver = true;
 ~esv = ESView.new(~window, model: ~esm);
 
-
+~esm.addDependant { |...args|
+  var module = args.pop;
+  var esm = args.removeAt(0);
+  "% % - %".format(module.kind, module.index, args).postln
+};
 )
+
 
 ~esm.putLFO(1, 'Sin')
 ~esm.lfos[1].patchTo(~esm.oscs[0])

@@ -14,8 +14,8 @@ ESM {
     filts = ESModuleList(\filt, numFilts);
     amps = ESModuleList(\amp, 1);
     connections = ConnectionList.make {
-      [lfos, oscs, filts, amps].do(_.connectTo({ |changedList, what|
-        this.changed(what, changedList)
+      [lfos, oscs, filts, amps].do(_.connectTo({ |changedList ...args|
+        this.changed(*args)
       }));
     };
   }
@@ -33,6 +33,7 @@ ESM {
 
   free {
     connections.free;
+    [lfos, oscs, filts, amps].do(_.free);
     synth.free;
   }
 

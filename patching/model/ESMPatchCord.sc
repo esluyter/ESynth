@@ -1,5 +1,5 @@
 ESMPatchCord {
-  var <fromLFO, <toModule, <toInlet, <params, patchCords, <color;
+  var <fromLFO, <toModule, <toInlet, <params, patchCords, <color, <kind = \patchCord, <index;
 
   *new { |fromLFO, toModule, toInlet, amt = 0, color|
     ^super.newCopyArgs(fromLFO, toModule, toInlet).init(amt, color);
@@ -33,8 +33,12 @@ ESMPatchCord {
       patchCords[0] = ESMPatchCord(fromLFO, this, 0);
     };
     {
+      var rootmodule = this;
       0.01.wait;
-      this.list.changed(\patchCords);
+      while { rootmodule.class != ESModule } {
+        rootmodule = rootmodule.toModule;
+      };
+      rootmodule.changed(\patchCords);
     }.fork(AppClock);
   }
 

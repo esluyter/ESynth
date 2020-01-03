@@ -1,5 +1,5 @@
 ESModuleList : List {
-  var <kind;
+  var <kind, connections;
 
   *new { |kind = \lfo, size = 4|
     ^super.new.init(kind, size);
@@ -7,11 +7,24 @@ ESModuleList : List {
 
   init { |argkind, size|
     kind = argkind;
-    this.setCollection(
-      size.collect { ESModule.newList(this) }
-    );
+    connections = ConnectionList.make {
+      this.setCollection(
+        size.collect { |i|
+          var module = ESModule.newList(this);
+          module.connectTo({ |what ...args|
+            this.changed(*(args.add(module)));
+          });
+          module;
+        }
+      );
+    }
   }
-  
+
+  free {
+    connections.free;
+    this.do(_.free);
+  }
+
   patchCords {
     ^this.collect(_.patchCords).flat;
   }

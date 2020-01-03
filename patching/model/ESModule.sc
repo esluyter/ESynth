@@ -2,7 +2,7 @@ ESModule {
   var <kind, <def, <rate;
   var <list, <params;
   var <type, <envType, <global;
-  var patchCords;
+  var patchCords, connections;
 
   *newList { |list, def, rate = \control|
     ^this.new(list.kind, def, rate).initList(list);
@@ -74,14 +74,22 @@ ESModule {
   }
 
   prMakeParams { |copyParams = false|
+    connections.free;
     if (def.isNil) {
       params = [];
       ^this;
     };
-    params = def.params.collect { |esparam, i|
-      var param = ESMParam(this, esparam);
-      if (copyParams) { param.value_(params[i].value) };
-      param;
+    connections = ConnectionList.make {
+      params = def.params.collect { |esparam, i|
+        var param = ESMParam(this, esparam);
+        param.cv.signal(\value).connectTo({
+          this.changed(\param, param)
+        });
+        if (copyParams) {
+          param.value_(params[i].value)
+        };
+        param;
+      };
     };
   }
   prInitPatchCords { |copyPatchCords = false|
@@ -93,7 +101,7 @@ ESModule {
         patchCords[i] = oldPatchCords[i];
       };
     };
-    list.changed(\patchCords);
+    this.changed(\patchCords);
   }
 
   defs { ^ESynthDef.perform((kind ++ \s).asSymbol) }
@@ -176,7 +184,7 @@ ESModule {
         patchCords[toInlet] = ESMPatchCord(fromLFO, this, toInlet);
       }
     };
-    list.changed(\patchCords);
+    this.changed(\patchCords);
   }
 
   patchCords {
@@ -209,5 +217,9 @@ ESModule {
       };
     };
     DoesNotUnderstandError(this, selector, args).throw;
+  }
+
+  printOn { | stream |
+    stream << "ESModule<" << if (def.notNil) { def.name } { "nil" } << ">";
   }
 }

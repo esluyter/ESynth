@@ -20,4 +20,8 @@ ESMParam {
 
   index { ^parent.params.indexOf(this); }
   modIndex { ^(this.index - parent.def.modOffset) }
+
+  printOn { | stream |
+    stream << "ESMParam<" << this.name << ", " << this.value << ">";
+  }
 }
