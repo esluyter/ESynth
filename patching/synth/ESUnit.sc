@@ -13,7 +13,7 @@ ESUnit {
   }
 
   *modUnits { |fromUnit, toUnit, param, amt = 0, group|
-    var paramindex = toUnit.getParamIndex(param);
+    var paramindex = toUnit.getParamModIndex(param);
     if (paramindex.isNil) {
       "Must supply valid parameter (int or symbol)".warn;
       ^nil;
@@ -22,19 +22,43 @@ ESUnit {
   }
 
   *lfo { |name, args, group, rate = \control, bus|
-    ^this.new(ESynthDef.lfos.at(name), args, group, rate, bus);
+    var def;
+    if (name.class == ESynthDef) {
+      def = name;
+    } {
+      def = ESynthDef.lfos.at(name);
+    }
+    ^this.new(def, args, group, rate, bus);
   }
 
   *osc { |name, args, group, bus|
-    ^this.new(ESynthDef.oscs.at(name), args, group, \audio, bus);
+    var def;
+    if (name.class == ESynthDef) {
+      def = name;
+    } {
+      def = ESynthDef.oscs.at(name);
+    }
+    ^this.new(def, args, group, \audio, bus);
   }
 
   *filt { |name, args, group, bus|
-    ^this.new(ESynthDef.filts.at(name), args, group, \audio, bus);
+    var def;
+    if (name.class == ESynthDef) {
+      def = name;
+    } {
+      def = ESynthDef.filts.at(name);
+    }
+    ^this.new(def, args, group, \audio, bus);
   }
 
   *amp { |name, args, group, bus|
-    ^this.new(ESynthDef.amps.at(name), args, group, \audio, bus);
+    var def;
+    if (name.class == ESynthDef) {
+      def = name;
+    } {
+      def = ESynthDef.amps.at(name);
+    }
+    ^this.new(def, args, group, \audio, bus);
   }
 
   *new { |def, args, group, rate = \audio, bus|

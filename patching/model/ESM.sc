@@ -1,7 +1,6 @@
 ESM {
   var <numVoices;
   var <lfos, <oscs, <filts, <amps;
-  var <synth;
   var connections;
 
   *new { |numVoices = 8, numLFOs = 20, numOscs = 6, numFilts = 4|
@@ -26,15 +25,9 @@ ESM {
     amps[0].def_(\VCA);
   }
 
-  startSynth { |server|
-    synth.free;
-    synth = ESynth(server, this, numVoices);
-  }
-
   free {
     connections.free;
     [lfos, oscs, filts, amps].do(_.free);
-    synth.free;
   }
 
   putLFO { |index, def, rate = \control, copyParams = false, copyPatchCords = true, global = true|
@@ -51,6 +44,7 @@ ESM {
   }
 
   putAmp { /* TODO */ }
+  amp { ^amps[0] }
 
   numLFOs { ^lfos.size }
   numOscs { ^oscs.size }

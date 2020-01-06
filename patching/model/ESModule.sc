@@ -21,7 +21,6 @@ ESModule {
   }
 
   def_ { |value, rate = \control, copyParams = false, copyPatchCords = true, global = true|
-    // TODO: copy patch cords..
     if (value.isNil or: (value == '-empty-')) {
       def = nil;
       rate = nil;
@@ -51,16 +50,18 @@ ESModule {
       def = value;
     };
     this.rate_(rate);
+    this.global_(global, false);
+    this.changed(\defName, if (def.notNil) { def.name } { nil });
     this.prMakeParams(copyParams);
     this.prInitPatchCords(copyPatchCords);
     this.type_(0);
     this.envType_(0);
-    this.global_(global);
     this.changed(\def, this);
     ^this;
   }
 
   rate_ { |value|
+    // TODO: figure out changed notification here...
     if (def.isNil) {
       rate = nil;
       ^this;
@@ -104,6 +105,9 @@ ESModule {
     this.changed(\patchCords);
   }
 
+  rootModule { ^this }
+  depth { ^0 }
+
   defs { ^ESynthDef.perform((kind ++ \s).asSymbol) }
   defNames { ^this.defs.keys.asArray.sort }
   displayNames {
@@ -137,8 +141,8 @@ ESModule {
       type = nil;
     } {
       type = value.clip(0, this.types.size - 1);
+      this.changed(\type, type);
     };
-    this.changed(\type, type);
   }
 
   envTypes {
@@ -151,21 +155,24 @@ ESModule {
       envType = nil;
     } {
       envType = value.clip(0, this.envTypes.size - 1);
+      this.changed(\envType, envType);
     };
-    this.changed(\envType, envType);
   }
 
-  global_ { |value|
+  global_ { |value, notify = true|
+    // TODO: figure out changed notification here...
     if (def.isNil) {
       global = false;
     } {
       if (kind == \lfo) {
         global = value;
+        if (notify) {
+          this.changed(\global, global);
+        };
       } {
         global = false;
       };
     };
-    this.changed(\global, global);
   }
 
   index { ^list.indexOf(this); }
@@ -204,6 +211,13 @@ ESModule {
 
   modOffset { if (def.notNil) { ^def.modOffset } { ^0 } }
   maxMods { if (def.notNil) { ^def.maxMods } { ^0 } }
+
+  argList {
+    var pairs = params.collect { |param| [param.name, param.value] };
+    if (envType.notNil) { pairs = pairs.add([\envType, envType]) };
+    if (type.notNil) { pairs = pairs.add([\type, type]) };
+    ^pairs.flat;
+  }
 
   // to forward getters and setters of param values
   doesNotUnderstand { |selector ... args|

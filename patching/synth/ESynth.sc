@@ -120,6 +120,9 @@ ESynth {
     var fromUnit, toUnit;
     var globalLFO = globals.lfos[lfoIndex].notNil;
     var globalToUnit = true;
+    if (globalLFO.not and: (voices[0].lfos[lfoIndex].isNil)) {
+      ^false;
+    };
     try {
       globalToUnit = toUnitFunc.(voices[0]).isNil;
     };
@@ -213,6 +216,10 @@ ESynth {
 
   setFilt { |index ...args|
     voices.do(_.setFilt(index, *args));
+  }
+
+  putAmp { |...args|
+    voices.do(_.putAmp(*args));
   }
 
   setAmp { |...args|

@@ -40,7 +40,8 @@ ESVoice {
       ESUnit.mod(oscbus, 0, [group, \addToTail], stbus.subBus(1))
     ];
     filtgroups = { Group(group, \addToTail) }.dup(numfilts/2);
-    amp = ESUnit.amp(\VCA, [inmono: monobus, instereo: stbus, notebus: notebus, velbus: velbus, gatebus: gatebus, env: 1], [group, \addToTail], 0);
+    this.putAmp(\VCA);
+    //amp = ESUnit.amp(\VCA, [inmono: monobus, instereo: stbus, notebus: notebus, velbus: velbus, gatebus: gatebus, env: 1], [group, \addToTail], 0);
   }
 
   free {
@@ -121,9 +122,20 @@ ESVoice {
     filts[index].set(*args);
   }
 
+  putAmp { |name, args = (#[])|
+    amp.free;
+    amp = nil;
+    if (name.notNil) {
+      args = args ++ [inmono: monobus, instereo: stbus, notebus: notebus, velbus: velbus, gatebus: gatebus, env: 1];
+      amp = ESUnit.amp(name, args, [group, \addToTail], 0);
+    };
+  }
+
   setAmp { |...args|
     amp.set(*args);
   }
+
+  amps { ^[amp] }
 
   bend_ { |value|
     bend = value;

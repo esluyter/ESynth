@@ -1,5 +1,6 @@
 ESMPatchCord {
   var <fromLFO, <toModule, <toInlet, <params, patchCords, <color, <kind = \patchCord, <index;
+  var connection;
 
   *new { |fromLFO, toModule, toInlet, amt = 0, color|
     ^super.newCopyArgs(fromLFO, toModule, toInlet).init(amt, color);
@@ -9,6 +10,12 @@ ESMPatchCord {
     params = [ESMParam(this, ESynthDef.mod.params[0])];
     color = argcolor ?? Color.rand;
     patchCords = [nil];
+
+    connection = params[0].cv.connectTo { this.rootModule.changed(\patchAmt, this) };
+  }
+
+  free {
+    connection.free;
   }
 
   amt { ^params[0].value }
@@ -33,13 +40,21 @@ ESMPatchCord {
       patchCords[0] = ESMPatchCord(fromLFO, this, 0);
     };
     {
-      var rootmodule = this;
+      var rootmodule = this.rootModule;
       0.01.wait;
-      while { rootmodule.class != ESModule } {
-        rootmodule = rootmodule.toModule;
-      };
       rootmodule.changed(\patchCords);
     }.fork(AppClock);
+  }
+
+  rootModule { ^toModule.rootModule }
+  depth { ^(toModule.depth + 1) }
+  toDepth { ^toModule.depth }
+  rootToInlet {
+    var tm = this;
+    while { tm.toModule.class != ESModule } {
+      tm = tm.toModule;
+    };
+    ^tm.toInlet;
   }
 
   list { ^toModule.list }
