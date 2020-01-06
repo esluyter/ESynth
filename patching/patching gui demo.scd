@@ -42,16 +42,22 @@ Window.closeAll;
   switch (what)
   {\global} {
     ~es.putLFO(index, module.def.name, module.rate, module.argList, module.global);
-    ~esm.patchCords.values.flat.select({ |pc| pc.fromIndex == index }).do { |pc|
-      ~newPatch.(pc);
+    ~esm.patchCordsFrom(index).do { |pc|
+      while { pc.notNil } {
+        ~newPatch.(pc);
+        pc = pc.patchCords[0];
+      };
     };
   }
   {\defName} {
     switch (module.kind)
     {\lfo} {
       ~es.putLFO(index, val, module.rate, module.argList, module.global);
-      ~esm.patchCords.values.flat.select({ |pc| pc.fromIndex == index }).do { |pc|
-        ~newPatch.(pc);
+      ~esm.patchCordsFrom(index).do { |pc|
+        while { pc.notNil } {
+          ~newPatch.(pc);
+          pc = pc.patchCords[0];
+        };
       };
     }
     {\osc} {
@@ -61,7 +67,7 @@ Window.closeAll;
       ~es.putFilt(index, val, module.argList)
     }
     {\amp} {
-      ~es.putAmp(index, val, module.argList)
+      ~es.putAmp(val, module.argList)
     }
   }
   {\param} {
@@ -108,7 +114,6 @@ Window.closeAll;
     var numInlets = if (module.def.isNil) { 0 } { module.def.params.size - module.def.modOffset };
     numInlets.do { |i| ~es.freeMod({ |v| v.perform(toCategory).at(toIndex) }, i) };
     module.patchCords.do { |pc|
-      var toInlet = pc.toInlet;
       while { pc.notNil } {
         ~newPatch.(pc);
         pc = pc.patchCords[0];
@@ -127,22 +132,22 @@ Window.closeAll;
       ~es.setFilt(index, \type, val)
     }
     {\amp} {
-      ~es.setAmp(index, \type, val)
+      ~es.setAmp(\type, val)
     }
   }
   {\envType} {
     switch (module.kind)
     {\lfo} {
-      ~es.setLFO(index, \envType, val)
+      ~es.setLFO(index, \env_type, val)
     }
     {\osc} {
-      ~es.setOsc(index, \envType, val)
+      ~es.setOsc(index, \env_type, val)
     }
     {\filt} {
-      ~es.setFilt(index, \envType, val)
+      ~es.setFilt(index, \env_type, val)
     }
     {\amp} {
-      ~es.setAmp(index, \envType, val)
+      ~es.setAmp(\env_type, val)
     }
   }
   {\def} {
@@ -173,19 +178,5 @@ MIDIdef.noteOff(\keyboardOff, { |vel, num| ~es.noteOff(num) });
 MIDIdef.bend(\bend, { |val| ~es.bend_(val.linlin(0, 16383, -2.0, 2.0)) });
 )
 
-~es.voices[0].filts[0].modAt(5).dump
-
-~esm.putLFO(1, 'Sin')
-~esm.lfos[1].patchTo(~esm.oscs[0])
-~esm.oscs[0].patchAt(0).amt = 0.5
-
-
-
 s.record;
 s.stopRecording;
-
-
-
-~esm.writeArchive("~/Desktop/archive.txt".standardizePath)
-
-~esm.oscs[0].patchCords[0].params[]

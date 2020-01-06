@@ -126,6 +126,7 @@ ESynth {
     try {
       globalToUnit = toUnitFunc.(voices[0]).isNil;
     };
+    [globalLFO, globalToUnit].postln;
     if (globalLFO and: globalToUnit) {
       fromUnit = globals.lfos[lfoIndex];
       toUnit = toUnitFunc.(globals);

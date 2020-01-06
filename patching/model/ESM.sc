@@ -57,4 +57,15 @@ ESM {
       amp: amps.patchCords
     )
   }
+  patchCordsFrom { |index|
+    var level0 = this.patchCords.values.flat;
+    var patchCords = [];
+    level0.do { |pc|
+      while { pc.notNil } {
+        patchCords = patchCords.add(pc);
+        pc = pc.patchCords[0];
+      };
+    };
+    ^patchCords.select({ |pc| pc.fromIndex == index });
+  }
 }

@@ -6,7 +6,7 @@ ESynthDef {
     Class.initClassTree(ServerBoot);
     Class.initClassTree(SynthDescLib);
     Class.initClassTree(ControlSpec);
-    mod = this.new(\mod, \mod, { In.kr(\in.ir) * ~amt }, { In.ar(\in.ir) * ~amt }, nil, [ESParam(\amt, \control, [-1, 1, \lin, 0.0, 0], centered: true)], maxMods: 1);
+    mod = this.new(\mod, \mod, { In.kr(\in.ir) * ~amt }, { InFeedback.ar(\in.ir) * ~amt }, nil, [ESParam(\amt, \control, [-1, 1, \lin, 0.0, 0], centered: true)], maxMods: 1);
     note = this.new(\note, \note, { ~note.lag2(~portamento) + ~bend }, nil, nil, [ESParam(\portamento), ESParam(\note, \control, [0, 127]), ESParam(\bend, \control, [-12, 12])], maxMods: 0);
     lfos = ();
     oscs = ();
