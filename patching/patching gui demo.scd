@@ -181,4 +181,4 @@ MIDIdef.bend(\bend, { |val| ~es.bend_(val.linlin(0, 16383, -2.0, 2.0)) });
 s.record;
 s.stopRecording;
 
-~es.portamento_(0.2)
+~es.portamento_(0)

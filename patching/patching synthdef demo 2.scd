@@ -75,7 +75,9 @@ e.putLFO(1, \Sin, args: [freq: 0.1]);
 e.putFilt(0, \Houvilainen, [\type, 1, \cutoff, 100, \res, 0.5]);
 e.setFilt(0, \rel, 0.1, \atk, 2, \dec, 3, \sus, 0.5, \env, 1, \vel, 0);
 e.setAmp(\rel, 1, \atk, 0.1, \vel, 1);
-e.addMod(0, { |v| v.filts[0] }, \cutoff, 0.1);
+~es.addMod(0, { |v| v.filts[0] }, \cutoff, 0.1);
+~es.voices[0].filts[0]
+~es.globals.lfos[0]
 e.setLFO(0, \freq, 6);
 e.setModAmt({ |v| v.filts[0] }, \cutoff, 0.03);
 e.putFilt(1, \Houvilainen, [\type, 1, \cutoff, 100, \res, 0.5]);
