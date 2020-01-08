@@ -65,15 +65,9 @@ ESynthDef {
     if (autoEnv) {
       var envType = \env_type.kr(0); // 0 - sustain, 1 - oneshot, 2 - retrig
       var loopNode = Select.kr(envType, [-99, -99, 0]);
-      var relNode = Select.kr(envType, [3, -99, 3]);
-      var env = EnvGen.ar(
-        [ 0,       4,       relNode, loopNode,
-          0,       e[\del], 5,       -4,
-          1,       e[\atk], 5,       -4,
-          e[\sus], e[\dec], 5,       -4,
-          0,       e[\rel], 5,       -4 ],
-        e[\gate];
-      );
+      var relNode = Select.kr(envType, [2, -99, 2]);
+      var gateDel = Env([0, 0, 0, 1, 0], [0, e[\del], 0, 0], \lin, 3).kr(0, e[\gate]);
+      var env = Env([0, 1, e[\sus], 0], [e[\atk], e[\dec], e[\rel]], -4, relNode, loopNode).ar(0, gateDel).poll;
       e[\env] = LinSelectX.kr(velamt, [1, velin * 2]) * envamt * env;
     };
     e[\vel] = LinSelectX.kr(envamt, [In.kr(\velbus.ir) * velamt, 0]);
