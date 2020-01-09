@@ -14,7 +14,7 @@ ESynth {
       \key, \kr,
       \phase, [\ar, [0, 1]],
       {
-        var env = Integrator.kr(ControlDur.ir / ~delay, 1 - (Changed.kr(~gate) * ~gate)).clip(0, 1);
+        var env = Integrator.kr(ControlDur.ir / ~delay, 1 - (Changed.kr(~gate.poll) * ~gate)).clip(0, 1);
         var trig = ~gate * ~type;
         var phase = Select.kr(~type, [Rand(0, 1), ~phase]);
         var phasor = (Phasor.kr(trig, ~freq * 2pi / ControlRate.ir, 0, 2pi) + (phase * 2pi)).wrap(0, 2pi);
@@ -248,6 +248,7 @@ ESynth {
   }
 
   noteOff { |num|
+    globals.noteOff(num);
     voices.do(_.noteOff(num));
   }
 

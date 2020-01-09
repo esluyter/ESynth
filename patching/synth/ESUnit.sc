@@ -126,7 +126,7 @@ ESUnit {
   }
 
   getParamModIndex { |param|
-    if (param.isSymbol) {
+    if (param.class == Symbol) {
       ^this.params.collect(_.name).indexOf(param) - def.modOffset;
     } {
       ^param;

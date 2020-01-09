@@ -67,7 +67,7 @@ ESynthDef {
       var loopNode = Select.kr(envType, [-99, -99, 0]);
       var relNode = Select.kr(envType, [2, -99, 2]);
       var gateDel = Env([0, 0, 0, 1, 0], [0, e[\del], 0, 0], \lin, 3).kr(0, e[\gate]);
-      var env = Env([0, 1, e[\sus], 0], [e[\atk], e[\dec], e[\rel]], -4, relNode, loopNode).ar(0, gateDel).poll;
+      var env = Env([0, 1, e[\sus], 0], [e[\atk], e[\dec], e[\rel]], -4, relNode, loopNode).ar(0, gateDel);
       e[\env] = LinSelectX.kr(velamt, [1, velin * 2]) * envamt * env;
     };
     e[\vel] = LinSelectX.kr(envamt, [In.kr(\velbus.ir) * velamt, 0]);
