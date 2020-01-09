@@ -253,14 +253,17 @@ ESynth {
   }
 
   bend_ { |value|
+    globals.bend_(value);
     voices.do(_.bend_(value));
   }
 
   mod_ { |value|
+    globals.mod_(value);
     voices.do(_.mod_(value));
   }
 
   portamento_ { |value|
+    globals.portamento_(value);
     voices.do(_.portamento_(value));
   }
 }
