@@ -6,7 +6,6 @@ ESynth {
   *initClass {
     Class.initClassTree(ESynthDef);
 
-    // TODO: make gate function
     ESynthDef.lfo(\Sin,
       [\random, \gate],
       \delay, [\kr, [0, 10, 4], 0.03],
@@ -14,13 +13,18 @@ ESynth {
       \key, \kr,
       \phase, [\ar, [0, 1]],
       {
-        var env = Integrator.kr(ControlDur.ir / ~delay, 1 - (Changed.kr(~gate.poll) * ~gate)).clip(0, 1);
+        var env = Integrator.kr(ControlDur.ir / ~delay, 1 - (Changed.kr(~gate) * ~gate)).clip(0, 1);
         var trig = ~gate * ~type;
-        var phase = Select.kr(~type, [Rand(0, 1), ~phase]);
+        var phase = Select.kr(~type, [Rand(0, 1), DC.kr(0)]) + ~phase;
         var phasor = (Phasor.kr(trig, ~freq * 2pi / ControlRate.ir, 0, 2pi) + (phase * 2pi)).wrap(0, 2pi);
         SinOsc.kr(0, phasor) * env;
       }, {
-        SinOsc.ar(~freq, ~phase) * XLine.kr(0.01, 1, ~delay)
+        var env = Integrator.kr(ControlDur.ir / ~delay, 1 - (Changed.kr(~gate) * ~gate)).clip(0, 1);
+        var trig = ~gate * ~type;
+        var phase = Select.kr(~type, [Rand(0, 1), DC.kr(0)]) + ~phase;
+        var phasor = (Phasor.ar(trig, ~freq * 2pi / SampleRate.ir, 0, 2pi) + (phase * 2pi)).wrap(0, 2pi);
+        SinOsc.ar(0, phasor) * env;
+        //SinOsc.ar(~freq, ~phase) * XLine.kr(0.01, 1, ~delay)
       }
     );
 
