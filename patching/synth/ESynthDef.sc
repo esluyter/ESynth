@@ -146,7 +146,7 @@ ESynthDef {
 
     if (addEnvParams) {
       params = [
-        ESParam(\key, \control, [-1, 1, \lin, 0, 0]), ESParam(\vel),
+        ESParam(\key, \control, [-1, 1, \lin, 0, 0], centered: true), ESParam(\vel),
         ESParam(\env),
         ESParam('del', \control, [0, 10, 4], 0.03),
         ESParam('atk', \control, [0.001, 20, 8], 0.1),
