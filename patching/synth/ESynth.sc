@@ -16,13 +16,13 @@ ESynth {
         var env = Integrator.kr(ControlDur.ir / ~delay, 1 - (Changed.kr(~gate) * ~gate)).clip(0, 1);
         var trig = ~gate * ~type;
         var phase = Select.kr(~type, [Rand(0, 1), DC.kr(0)]) + ~phase;
-        var phasor = (Phasor.kr(trig, ~freq * 2pi / ControlRate.ir, 0, 2pi) + (phase * 2pi)).wrap(0, 2pi);
+        var phasor = (Phasor.kr(trig, ~freq * (((~note - 48) * ~key).midiratio) * 2pi / ControlRate.ir, 0, 2pi) + (phase * 2pi)).wrap(0, 2pi);
         SinOsc.kr(0, phasor) * env;
       }, {
         var env = Integrator.kr(ControlDur.ir / ~delay, 1 - (Changed.kr(~gate) * ~gate)).clip(0, 1);
         var trig = ~gate * ~type;
         var phase = Select.kr(~type, [Rand(0, 1), DC.kr(0)]) + ~phase;
-        var phasor = (Phasor.ar(trig, ~freq * 2pi / SampleRate.ir, 0, 2pi) + (phase * 2pi)).wrap(0, 2pi);
+        var phasor = (Phasor.ar(trig, ~freq * (((~note - 48) * ~key).midiratio) * 2pi / SampleRate.ir, 0, 2pi) + (phase * 2pi)).wrap(0, 2pi);
         SinOsc.ar(0, phasor) * env;
       }
     );
