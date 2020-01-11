@@ -133,11 +133,11 @@ ModuleView : SCViewHolder {
         names[i].string_(param.name);
         knobs[i]
           .centered_(param.centered)
-          .step_(param.step / param.spec.range)
+          .step_(param.step / param.spec(model.rate).range)
           .shift_scale_(param.shift_scale)
           .mouseDownAction_({ |v, x, y, mod, buttNum, clickCount|
             if (buttNum == 0 && (clickCount == 2)) {
-              param.value_(param.spec.default);
+              param.value_(param.spec(model.rate).default);
             };
           });
         boxes[i]
@@ -148,7 +148,7 @@ ModuleView : SCViewHolder {
           .clipHi_(param.spec.maxval)
           .mouseDownAction_({ |v, x, y, mod, buttNum, clickCount|
             if (buttNum == 0 && (clickCount == 2)) {
-              param.value_(param.spec.default);
+              param.value_(param.spec(model.rate).default);
             };
           });
         param.cv.signal(\value).connectTo(boxes[i].valueSlot);

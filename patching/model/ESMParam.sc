@@ -6,7 +6,7 @@ ESMParam {
   }
 
   init {
-    cv = NumericControlValue(spec: esparam.spec);
+    cv = NumericControlValue(spec: this.spec);
   }
 
   doesNotUnderstand { |selector ... args|
@@ -17,6 +17,14 @@ ESMParam {
   value_ { |value| cv.value_(value); ^this; }
   input { ^cv.input; }
   input_ { |value| cv.input_(value); ^this; }
+
+  spec {
+    ^esparam.spec(parent.rate)
+  }
+
+  step {
+    ^esparam.step(parent.rate)
+  }
 
   index { ^parent.params.indexOf(this); }
   modIndex { ^(this.index - parent.def.modOffset) }

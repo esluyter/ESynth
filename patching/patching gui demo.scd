@@ -183,3 +183,6 @@ s.stopRecording;
 
 ~es.portamento_(0)
 ~es.globals.noteStack
+
+
+~esm.lfos[15].params
