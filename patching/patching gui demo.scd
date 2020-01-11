@@ -173,7 +173,7 @@ s.plotTree;
 
 MIDIClient.init;
 MIDIIn.connectAll;
-MIDIdef.noteOn(\keyboardOn, { |vel, num| ~es.noteOn(num.postln, vel) });
+MIDIdef.noteOn(\keyboardOn, { |vel, num| ~es.noteOn(num, vel) });
 MIDIdef.noteOff(\keyboardOff, { |vel, num| ~es.noteOff(num) });
 MIDIdef.bend(\bend, { |val| ~es.bend_(val.linlin(0, 16383, -2.0, 2.0)) });
 )

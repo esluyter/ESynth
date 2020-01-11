@@ -123,7 +123,7 @@ ESynthDef {
 
   *amp { |name ...args|
     var typelist, params, arfunc;
-    # typelist, params, arfunc = this.prParseConstructorArgs(args, true);
+    # typelist, params, arfunc = this.prParseConstructorArgs(args, true, 1);
     amps[name] = this.new(\amp, name, nil, arfunc, typelist, params, {
       ~inmono = In.ar(\inmono.ir);
       ~instereo = In.ar(\instereo.ir, 2);
@@ -132,7 +132,7 @@ ESynthDef {
     ^amps[name];
   }
 
-  *prParseConstructorArgs { |args, addEnvParams = false|
+  *prParseConstructorArgs { |args, addEnvParams = false, envDefault = 0|
     var typelist = [], params = [], func1, func2;
 
     if (args[0].isCollection) { typelist = args[0]; args = args[1..] };
@@ -147,7 +147,7 @@ ESynthDef {
     if (addEnvParams) {
       params = [
         ESParam(\key, \control, [-1, 1, \lin, 0, 0], centered: true), ESParam(\vel),
-        ESParam(\env),
+        ESParam(\env, \control, \amp.asSpec.copy.default_(envDefault)),
         ESParam('del', \control, [0, 10, 4], 0.03),
         ESParam('atk', \control, [0.001, 20, 8], 0.1),
         ESParam('dec', \control, [0.001, 20, 8, 0.0, 0.5], 0.1),
