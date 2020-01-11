@@ -23,6 +23,7 @@ ESM {
     oscs[0].def_(\VCO);
     filts[0].def_(\Houvilainen);
     amps[0].def_(\VCA);
+    amps[0].env = 1;
   }
 
   free {

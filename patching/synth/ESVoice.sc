@@ -41,7 +41,6 @@ ESVoice {
     ];
     filtgroups = { Group(group, \addToTail) }.dup(numfilts/2);
     this.putAmp(\VCA);
-    //amp = ESUnit.amp(\VCA, [inmono: monobus, instereo: stbus, notebus: notebus, velbus: velbus, gatebus: gatebus, env: 1], [group, \addToTail], 0);
   }
 
   free {
@@ -126,7 +125,7 @@ ESVoice {
     amp.free;
     amp = nil;
     if (name.notNil) {
-      args = args ++ [inmono: monobus, instereo: stbus, notebus: notebus, velbus: velbus, gatebus: gatebus, env: 1];
+      args = args ++ [inmono: monobus, instereo: stbus, notebus: notebus, velbus: velbus, gatebus: gatebus];
       amp = ESUnit.amp(name, args, [group, \addToTail], 0);
     };
   }
