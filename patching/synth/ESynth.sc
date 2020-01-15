@@ -28,13 +28,15 @@ ESynth {
     );
 
     ESynthDef.lfo(\Noise,
+      [\cubic, \linear, \none],
       \delay, [\kr, [0, 10, 4], 0.03],
-      \freq, [\ar, [0.01, 200, 6, 0, 2], 0.5],
-      \interp, [\kr, [0, 3], 1],
+      \freq, [\ar, [[0.01, 200, 6, 0, 2], [0.1, 10000, 6, 0, 100]], [0.5, 8]],
       {
-        Select.kr(~interp, [LFDNoise0.kr(~freq), LFDNoise1.kr(~freq), LFNoise2.kr(~freq), LFDNoise3.kr(~freq)]) * XLine.kr(0.01, 1, ~delay);
+        var env = Integrator.kr(ControlDur.ir / ~delay, 1 - (Changed.kr(~gate) * ~gate)).clip(0, 1);
+        Select.kr(~type, [LFDNoise3.kr(~freq), LFDNoise0.kr(~freq), LFDNoise1.kr(~freq)]) * env;
       }, {
-        Select.ar(~interp, [LFDNoise0.ar(~freq), LFDNoise1.ar(~freq), LFNoise2.ar(~freq), LFDNoise3.ar(~freq)]) * XLine.kr(0.01, 1, ~delay);
+        var env = Integrator.kr(ControlDur.ir / ~delay, 1 - (Changed.kr(~gate) * ~gate)).clip(0, 1);
+        Select.ar(~type, [LFDNoise3.ar(~freq), LFDNoise0.ar(~freq), LFDNoise1.ar(~freq)]) * env;
       }
     );
 
@@ -74,12 +76,12 @@ ESynth {
     );
 
     ESynthDef.filt(\Houvilainen,
-      ['bypass', 'LP 24db', 'LP 18db', 'LP 12db', 'LP 6db', 'HP 24db', 'BP 24db', 'N 24db'],
+      ['LP 24db', 'LP 18db', 'LP 12db', 'LP 6db', 'HP 24db', 'BP 24db', 'N 24db', 'bypass'],
       \cutoff, [\ar, \freq.asSpec.copy.default_(20000), 25],
       \res, \kr,
       {
         ~cutoff = ~cutoff * ((~env + ~vel) * 100 + (~key * 1.05)).midiratio;
-        HouvilainenFilter.ar(~in, ~cutoff, ~res, ~type);
+        HouvilainenFilter.ar(~in, ~cutoff, ~res, (~type + 1) % 8);
       }
     );
 
