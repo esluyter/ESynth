@@ -77,7 +77,6 @@ ESynth {
       ['bypass', 'LP 24db', 'LP 18db', 'LP 12db', 'LP 6db', 'HP 24db', 'BP 24db', 'N 24db'],
       \cutoff, [\ar, \freq.asSpec.copy.default_(20000), 25],
       \res, \kr,
-      \mod, \kr,
       {
         ~cutoff = ~cutoff * ((~env + ~vel) * 100 + (~key * 1.05)).midiratio;
         HouvilainenFilter.ar(~in, ~cutoff, ~res, ~type);
