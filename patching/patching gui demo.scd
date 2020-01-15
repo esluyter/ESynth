@@ -177,6 +177,7 @@ MIDIdef.noteOn(\keyboardOn, { |vel, num| ~es.noteOn(num, vel) });
 MIDIdef.noteOff(\keyboardOff, { |vel, num| ~es.noteOff(num) });
 MIDIdef.bend(\bend, { |val| ~es.bend_(val.linlin(0, 16383, -2.0, 2.0)) });
 )
+1 % 8
 
 s.record;
 s.stopRecording;
@@ -187,5 +188,41 @@ s.stopRecording;
 ~esm.lfos[15].rate
 ~esm.lfos[15].params[1].spec(\audio).maxval
 
+~es.globals.lfos[15].rate
 ~es.globals.lfos[15].synth.get(\freq, _.postln)
 ~es.globals.lfos[15].bus.scope
+~es.globals.lfos[15].outputMods[0].bus.scope
+~es.voices[0].oscs[0].synth
+-2.midiratio
+~es.free
+SynthDescLib.global.at('ESfiltARHouvilainen').def.draw
+
+
+(
+x.free;
+x = {
+  var freq = 100;
+  var phase = Phasor.ar(0, freq / SampleRate.ir, 0, 1) * 2pi;
+  [SinOsc.ar(0, phase), SinOsc.ar(freq)] * 0.16;
+}.play
+)
+
+(
+x.free;
+x = {
+  var mod = SinOsc.ar(300).exprange(0.5, 2);
+  var freq = 100 * mod;
+  var phase = Phasor.ar(0, freq / SampleRate.ir, 0, 1) * 2pi;
+  [SinOsc.ar(0, phase), SinOsc.ar(freq)] * 0.16;
+}.play
+)
+
+(
+x.free;
+x = {
+  var mod = SinOsc.ar(300).exprange(0.5, 2);
+  var freq = 100 * mod;
+  var phase = Phasor.ar(DC.ar(0), freq / SampleRate.ir, 0, 1) * 2pi;
+  [SinOsc.ar(0, phase), SinOsc.ar(freq)] * 0.16;
+}.play
+)

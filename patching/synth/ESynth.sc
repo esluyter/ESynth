@@ -48,8 +48,18 @@ ESynth {
       \dec, [\kr, [0.001, 20, 8, 0.0, 0.5], 0.1],
       \sus, [\kr,  \amp.asSpec.copy.default_(1)],
       \rel, [\kr, [0.001, 20, 8], 0.1],
-      { DC.kr(0) },
-      { DC.ar(0) }
+      {
+        var loopNode = Select.kr(~type, [-99, -99, 0]);
+        var relNode = Select.kr(~type, [2, -99, 2]);
+        var gateDel = Env([0, 0, 0, 1, 0], [0, ~del, 0, 0], \lin, 3).kr(0, ~gate);
+        Env([0, 1, ~sus, 0], [~atk, ~dec, ~rel], -4, relNode, loopNode).kr(0, gateDel);
+      },
+      {
+        var loopNode = Select.kr(~type, [-99, -99, 0]);
+        var relNode = Select.kr(~type, [2, -99, 2]);
+        var gateDel = Env([0, 0, 0, 1, 0], [0, ~del, 0, 0], \lin, 3).kr(0, ~gate);
+        Env([0, 1, ~sus, 0], [~atk, ~dec, ~rel], -4, relNode, loopNode).ar(0, gateDel);
+      }
     );
 
     ESynthDef.osc(\VCO,
