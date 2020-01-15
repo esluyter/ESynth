@@ -130,7 +130,7 @@ ModuleView : SCViewHolder {
     connections = ConnectionList.make {
       model.params.do { |param, i|
         [knobs[i], boxes[i], names[i]].do(_.visible_(true));
-        names[i].string_(param.name);
+        names[i].string_(param.displayName);
         knobs[i]
           .centered_(param.centered)
           .step_(param.step / param.spec(model.rate).range)

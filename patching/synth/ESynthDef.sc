@@ -50,10 +50,13 @@ ESynthDef {
     var e = Environment.make(envirFunc);
     e[\type] = \type.kr;
     params.do { |param|
+      // NOT THE BEST SPOT FOR THIS!!
       var name = param.name;
+      var modName = param.modName;
+
       var spec = param.spec(rate);
       var value = name.kr(spec.default);
-      var modvalue = param.modName.perform(
+      var modvalue = modName.perform(
         if ((param.rate == 'audio') and: (rate == 'audio')) { \ar } { \kr }
       );
       e[name] = spec.warp.map(spec.unmap(value) + (modvalue * 0.5));

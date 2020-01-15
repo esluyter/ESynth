@@ -71,18 +71,20 @@ Window.closeAll;
     }
   }
   {\param} {
+    // NOT THE BEST SPOT FOR THIS!!
+    var name = val.name.asString.replace($ , $_).asSymbol;
     switch (module.kind)
     {\lfo} {
-      ~es.setLFO(index, val.name, val.value)
+      ~es.setLFO(index, name, val.value)
     }
     {\osc} {
-      ~es.setOsc(index, val.name, val.value)
+      ~es.setOsc(index, name, val.value)
     }
     {\filt} {
-      ~es.setFilt(index, val.name, val.value)
+      ~es.setFilt(index, name, val.value)
     }
     {\amp} {
-      ~es.setAmp(val.name, val.value)
+      ~es.setAmp(name, val.value)
     }
   }
   {\patchAmt} {
@@ -177,52 +179,47 @@ MIDIdef.noteOn(\keyboardOn, { |vel, num| ~es.noteOn(num, vel) });
 MIDIdef.noteOff(\keyboardOff, { |vel, num| ~es.noteOff(num) });
 MIDIdef.bend(\bend, { |val| ~es.bend_(val.linlin(0, 16383, -2.0, 2.0)) });
 )
-1 % 8
+
+
+(
+ESynthDef.osc('Operator 4',
+  ['ALGO 1', 'ALGO 2', 'ALGO 3', 'ALGO 4', 'ALGO 5', 'ALGO 6', 'ALGO 7', 'ALGO 8'],
+  'ratio 1', [\kr, [1, 20, \exp, 0.0, 0], 0.1],
+  'amp 1', [\kr, [0, 20, 6, 0.0, 0.1], 0.1],
+  'ratio 2', [\kr, [1, 20, \exp, 0.0, 0], 0.1],
+  'amp 2', [\kr, [0, 20, 6, 0.0, 0], 0.1],
+  'ratio 3', [\kr, [1, 20, \exp, 0.0, 0], 0.1],
+  'amp 3', [\kr, [0, 20, 6, 0.0, 0], 0.1],
+  'ratio 4', [\kr, [1, 20, \exp, 0.0, 0], 0.1],
+  'amp 4', [\kr, [0, 20, 6, 0.0, 0], 0.1],
+  {
+    var feedback = 1;
+    var chans = [0];
+    var algo = FM7.modMatrix(
+      [0, 1, 1],
+      [1, 2, 1],
+      [2, 3, 1],
+      [3, 3, feedback]
+    );
+    ~freq = ~note.midicps;
+    FM7.ar([
+        [~freq * ~ratio_1, 0, ~amp_1],
+        [~freq * ~ratio_2, 0, ~amp_2],
+        [~freq * ~ratio_3, 0, ~amp_3],
+        [~freq * ~ratio_4, 0, ~amp_4],
+        [0, 0, 0],
+        [0, 0, 0],
+      ], algo).slice(chans).asArray.sum
+  }
+);
+)
+
+'amp 4'.asString.replace($ , $_).asSymbol
 
 s.record;
 s.stopRecording;
 
 ~es.portamento_(0)
-~es.globals.noteStack
 
-~esm.lfos[15].rate
-~esm.lfos[15].params[1].spec(\audio).maxval
-
-~es.globals.lfos[15].rate
-~es.globals.lfos[15].synth.get(\freq, _.postln)
-~es.globals.lfos[15].bus.scope
-~es.globals.lfos[15].outputMods[0].bus.scope
-~es.voices[0].oscs[0].synth
--2.midiratio
-~es.free
 SynthDescLib.global.at('ESfiltARHouvilainen').def.draw
 
-
-(
-x.free;
-x = {
-  var freq = 100;
-  var phase = Phasor.ar(0, freq / SampleRate.ir, 0, 1) * 2pi;
-  [SinOsc.ar(0, phase), SinOsc.ar(freq)] * 0.16;
-}.play
-)
-
-(
-x.free;
-x = {
-  var mod = SinOsc.ar(300).exprange(0.5, 2);
-  var freq = 100 * mod;
-  var phase = Phasor.ar(0, freq / SampleRate.ir, 0, 1) * 2pi;
-  [SinOsc.ar(0, phase), SinOsc.ar(freq)] * 0.16;
-}.play
-)
-
-(
-x.free;
-x = {
-  var mod = SinOsc.ar(300).exprange(0.5, 2);
-  var freq = 100 * mod;
-  var phase = Phasor.ar(DC.ar(0), freq / SampleRate.ir, 0, 1) * 2pi;
-  [SinOsc.ar(0, phase), SinOsc.ar(freq)] * 0.16;
-}.play
-)

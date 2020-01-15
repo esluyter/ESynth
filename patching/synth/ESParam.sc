@@ -1,6 +1,6 @@
 ESParam {
   // rate = \control or \audio
-  var <name, <rate, spec, step, <shift_scale, <centered, altSpec, altStep;
+  var name, <rate, spec, step, <shift_scale, <centered, altSpec, altStep;
 
   *new { |name, rate = \control, spec = \amp, step = 0.005, shift_scale = 10, centered = false|
     var altSpec = nil;
@@ -20,6 +20,14 @@ ESParam {
     ^super.newCopyArgs(name, rate, spec.asSpec, step, shift_scale, centered, altSpec, altStep);
   }
 
+  name {
+    ^name.asString.replace($ , $_).asSymbol;
+  }
+
+  displayName {
+    ^name;
+  }
+
   step { |rate|
     if ((rate == \audio) and: (altStep.notNil)) { ^altStep };
     ^step;
@@ -31,6 +39,6 @@ ESParam {
   }
 
   modName {
-    ^(name ++ '_mod').asSymbol
+    ^(name ++ '_mod').replace($ , $_).asSymbol
   }
 }

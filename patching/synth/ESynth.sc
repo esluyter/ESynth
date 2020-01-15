@@ -77,6 +77,22 @@ ESynth {
       }
     );
 
+    ESynthDef.osc('Operator 4',
+      ['alg 1', 'alg 2', 'alg 3', 'alg 4', 'alg 5', 'alg 6', 'alg 7', 'alg 8'],
+      'ratio_1', [\kr, [1, 20, \exp, 0.0, 0], 0.1],
+      'amp_1', \kr,
+      'ratio_2', [\kr, [1, 20, \exp, 0.0, 0], 0.1],
+      'amp_2', \kr,
+      'ratio_3', [\kr, [1, 20, \exp, 0.0, 0], 0.1],
+      'amp_3', \kr,
+      'ratio_4', [\kr, [1, 20, \exp, 0.0, 0], 0.1],
+      'amp_4', \kr,
+      {
+        //~freq = (~note + ~tune + ~fine).midicps;
+        DC.ar(0)
+      }
+    );
+
     ESynthDef.osc(\Noise,
       \white, \kr,
       \pink, \kr,
