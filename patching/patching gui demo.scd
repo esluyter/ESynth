@@ -184,5 +184,8 @@ s.stopRecording;
 ~es.portamento_(0)
 ~es.globals.noteStack
 
+~esm.lfos[15].rate
+~esm.lfos[15].params[1].spec(\audio).maxval
 
-~esm.lfos[15].params
+~es.globals.lfos[15].synth.get(\freq, _.postln)
+~es.globals.lfos[15].bus.scope
