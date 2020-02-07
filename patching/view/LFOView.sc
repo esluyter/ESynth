@@ -36,7 +36,12 @@ LFOView : ModuleView {
       if (y > (view.bounds.height - 10)) {
         var toModule, inlet;
         # toModule, inlet = View.currentDrag;
-        model.patchTo(toModule, inlet);
+        //[model, toModule, inlet].postln;
+        // gaaaah why do we need this only for two mods on inlet 1 of vco 0>>>>??????<<<<<
+        fork {
+          0.1.wait;
+          defer { model.patchTo(toModule, inlet) };
+        };
       }
     };
   }

@@ -53,6 +53,8 @@ ESView : SCViewHolder {
   }
 
   prMakePatches {
+    //"ESView::prMakePatches begins".postln;
+
     patchKnobs.do(_.remove);
     patchKnobs = [];
 
@@ -117,21 +119,29 @@ ESView : SCViewHolder {
     };
 
     view.refresh;
+
+    //"ESView::prMakePatches ends".postln;
   }
 
   prDrawPatchCord { |p1, p2, patchCord|
     var offset = Point(0, max(((p2.y - p1.y) / 2), 40));
+    //"prDrawPatchCord begins".postln;
     Pen.moveTo(p1);
     Pen.curveTo(p2, p1 + offset, p2 - offset);
     if (patchCord.notNil) {
       Pen.strokeColor = patchCord.color;
     };
+    //"path drawn".postln;
     Pen.stroke;
+    //"stroked".postln;
     if (patchCord.notNil) {
+      //"ready to add knob".postln;
       patchKnobs = patchKnobs.add(
         PatchKnob(view, Rect(p2.x - 8, p2.y - 20, 16, 20), patchCord)
       );
+      //"knob added".postln;
       if (patchCord.patchCords.size > 0) {
+        patchCord.patchCords.postln;
         this.prDrawPatchCord(
           lfoViews[patchCord.patchCords[0].fromIndex].getOutletPoint,
           Point(p2.x - 5, p2.y - 18),
@@ -139,5 +149,6 @@ ESView : SCViewHolder {
         );
       };
     };
+    //"prDrawPatchCord ends".postln;
   }
 }

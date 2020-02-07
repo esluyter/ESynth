@@ -99,7 +99,7 @@ ESynthDef {
     lfos[name] = this.new(\lfo, name, krfunc, arfunc, typelist, params, {
       ~note = In.kr(\notebus.ir);
       ~gate = In.kr(\gatebus.ir);
-      ~mod = In.kr(\modbus.ir);
+      //~mod = In.kr(\modbus.ir);
     }, false, 5);
     ^lfos[name];
   }

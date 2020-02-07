@@ -1,6 +1,82 @@
+BootWindow.show;
+
 (
 ~esm.free;
-~esm = ESM();
+//~esm = ESM();
+~esm = ESM.fromEvent((
+  'numVoices': 8,
+  'portamento': 0.1,
+  'bend': 0,
+  'mod': 0,
+  'lfos': [
+    nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil,
+    (
+      'rate': 'control',
+      'global': true,
+      'type': 1,
+      'params': [  ],
+      'def': 'Mod'
+    ),
+    (
+      'rate': 'control',
+      'global': false,
+      'type': 0,
+      'params': [ 0, 7.4, 0, 0 ],
+      'def': 'Sin'
+    ),
+    nil, nil, nil
+  ],
+  'oscs': [
+    (
+      'rate': 'audio',
+      'global': false,
+      'params': [ 0.0, 0.0, 0.5, 0.01, 0.0, 0.0, 0.028899998708069, 0.0 ],
+      'def': 'VCO'
+    ),
+    nil, nil, nil, nil, nil
+  ],
+  'filts': [
+    (
+      'rate': 'audio',
+      'global': false,
+      'type': 0,
+      'envType': 0,
+      'params': [ 0.0, 0.0, 0.0, 0.0, 0.001, 0.5, 1.0, 0.001, 20000.0, 0.0 ],
+      'def': 'Houvilainen'
+    ),
+    nil, nil, nil
+  ],
+  'amps': [
+    (
+      'rate': 'audio',
+      'global': false,
+      'envType': 0,
+      'params': [ 0.0, 0.0, 1.0, 0.0, 0.001, 0.5, 1.0, 0.001, 0.0 ],
+      'def': 'VCA'
+    )
+  ],
+  'patchCords': [
+    (
+      'fromIndex': 16,
+      'toCategory': 'oscs',
+      'rootToIndex': 0,
+      'rootToInlet': 1,
+      'toDepth': 0,
+      'amt': -0.2,
+      'patchCords': [
+        (
+          'rootToIndex': 0,
+          'rootToInlet': 1,
+          'fromIndex': 15,
+          'toCategory': 'oscs',
+          'amt': 0.5,
+          'toDepth': 1,
+          'patchCords': [  ],
+        )
+      ],
+    )
+  ],
+));
 
 Window.closeAll;
 ~window = Window.new("Lines", Rect(0, 200, 880, 975)).front;
@@ -11,12 +87,12 @@ Window.closeAll;
 ~newPatch = { |pc|
   var fromIndex = pc.fromIndex;
   var rootModule = pc.rootModule;
-  var toCategory = (rootModule.kind ++ \s).asSymbol;
-  var toIndex = rootModule.index;
+  var toCategory = pc.toCategory;
+  var toIndex = pc.rootToIndex;
   var toInlet = pc.rootToInlet;
   var toDepth = pc.toDepth;
   var amt = pc.amt;
-  [fromIndex, toCategory, toIndex, toInlet, toDepth, amt].postln;
+  //[fromIndex, toCategory, toIndex, toInlet, toDepth, amt].postln;
   if (toDepth == 0) {
     ~es.addMod(fromIndex, { |v|
       v.perform(toCategory).at(toIndex)
@@ -34,25 +110,24 @@ Window.closeAll;
 
 ~esm.addDependant { |...args|
   var module = args.pop;
-  var index = module.index;
-  var esm = args.removeAt(0);
-  var what = args.removeAt(0);
-  var val = args[0];
-  ("% % - % changed" ++ if (val.notNil) { " to %" } { "" }).format(module.kind, index, what, val).postln;
-  switch (what)
-  {\global} {
-    ~es.putLFO(index, module.def.name, module.rate, module.argList, module.global);
-    ~esm.patchCordsFrom(index).do { |pc|
-      while { pc.notNil } {
-        ~newPatch.(pc);
-        pc = pc.patchCords[0];
-      };
+  if (module.class == ESM) {
+    var what = args[1];
+    var val = args[2];
+    [what, val].postln;
+    if (what == \numVoices) {
+      ~esinit.(~esm);
+    } {
+      ~es.perform((what ++ "_").asSymbol, val);
     };
-  }
-  {\defName} {
-    switch (module.kind)
-    {\lfo} {
-      ~es.putLFO(index, val, module.rate, module.argList, module.global);
+  } {
+    var index = module.index;
+    var esm = args.removeAt(0);
+    var what = args.removeAt(0);
+    var val = args[0];
+    //("% % - % changed" ++ if (val.notNil) { " to %" } { "" }).format(module.kind, index, what, val).postln;
+    switch (what)
+    {\global} {
+      ~es.putLFO(index, module.def.name, module.rate, module.argList, module.global);
       ~esm.patchCordsFrom(index).do { |pc|
         while { pc.notNil } {
           ~newPatch.(pc);
@@ -60,166 +135,167 @@ Window.closeAll;
         };
       };
     }
-    {\osc} {
-      ~es.putOsc(index, val, module.argList)
-    }
-    {\filt} {
-      ~es.putFilt(index, val, module.argList)
-    }
-    {\amp} {
-      ~es.putAmp(val, module.argList)
-    }
-  }
-  {\param} {
-    // NOT THE BEST SPOT FOR THIS!!
-    var name = val.name.asString.replace($ , $_).asSymbol;
-    switch (module.kind)
-    {\lfo} {
-      ~es.setLFO(index, name, val.value)
-    }
-    {\osc} {
-      ~es.setOsc(index, name, val.value)
-    }
-    {\filt} {
-      ~es.setFilt(index, name, val.value)
-    }
-    {\amp} {
-      ~es.setAmp(name, val.value)
-    }
-  }
-  {\patchAmt} {
-    var pc = val;
-    var rootModule = pc.rootModule;
-    var toCategory = (rootModule.kind ++ \s).asSymbol;
-    var toIndex = rootModule.index;
-    var toInlet = pc.rootToInlet;
-    var toDepth = pc.toDepth;
-    var amt = pc.amt;
-    [toCategory, toIndex, toInlet, toDepth, amt].postln;
-    if (toDepth == 0) {
-      ~es.setModAmt({ |v|
-        v.perform(toCategory).at(toIndex)
-      }, toInlet, amt);
-    } {
-      ~es.setModAmt({ |v|
-        var unit = v.perform(toCategory).at(toIndex).modAt(toInlet);
-        (toDepth - 1).do {
-          unit = unit.modAt(0);
+    {\defName} {
+      switch (module.kind)
+      {\lfo} {
+        ~es.putLFO(index, val, module.rate, module.argList, module.global);
+        ~esm.patchCordsFrom(index).do { |pc|
+          while { pc.notNil } {
+            ~newPatch.(pc);
+            pc = pc.patchCords[0];
+          };
         };
-        unit;
-      }, 0, amt);
-    };
-  }
-  {\patchCords} {
-    var toCategory = (module.kind ++ \s).asSymbol;
-    var toIndex = module.index;
-    var numInlets = if (module.def.isNil) { 0 } { module.def.params.size - module.def.modOffset };
-    numInlets.do { |i| ~es.freeMod({ |v| v.perform(toCategory).at(toIndex) }, i) };
-    module.patchCords.do { |pc|
-      while { pc.notNil } {
-        ~newPatch.(pc);
-        pc = pc.patchCords[0];
+      }
+      {\osc} {
+        ~es.putOsc(index, val, module.argList)
+      }
+      {\filt} {
+        ~es.putFilt(index, val, module.argList)
+      }
+      {\amp} {
+        ~es.putAmp(val, module.argList)
+      }
+    }
+    {\param} {
+      // NOT THE BEST SPOT FOR THIS!!
+      var name = val.name.asString.replace($ , $_).asSymbol;
+      switch (module.kind)
+      {\lfo} {
+        ~es.setLFO(index, name, val.value)
+      }
+      {\osc} {
+        ~es.setOsc(index, name, val.value)
+      }
+      {\filt} {
+        ~es.setFilt(index, name, val.value)
+      }
+      {\amp} {
+        ~es.setAmp(name, val.value)
+      }
+    }
+    {\patchAmt} {
+      var pc = val;
+      var rootModule = pc.rootModule;
+      var toCategory = (rootModule.kind ++ \s).asSymbol;
+      var toIndex = rootModule.index;
+      var toInlet = pc.rootToInlet;
+      var toDepth = pc.toDepth;
+      var amt = pc.amt;
+      //[toCategory, toIndex, toInlet, toDepth, amt].postln;
+      if (toDepth == 0) {
+        ~es.setModAmt({ |v|
+          v.perform(toCategory).at(toIndex)
+        }, toInlet, amt);
+      } {
+        ~es.setModAmt({ |v|
+          var unit = v.perform(toCategory).at(toIndex).modAt(toInlet);
+          (toDepth - 1).do {
+            unit = unit.modAt(0);
+          };
+          unit;
+        }, 0, amt);
       };
+    }
+    {\patchCords} {
+      var toCategory = (module.kind ++ \s).asSymbol;
+      var toIndex = module.index;
+      var numInlets = if (module.def.isNil) { 0 } { module.def.params.size - module.def.modOffset };
+      numInlets.do { |i| ~es.freeMod({ |v| v.perform(toCategory).at(toIndex) }, i) };
+      module.patchCords.do { |pc|
+        while { pc.notNil } {
+          ~newPatch.(pc);
+          pc = pc.patchCords[0];
+        };
+      };
+    }
+    {\type} {
+      switch (module.kind)
+      {\lfo} {
+        ~es.setLFO(index, \type, val)
+      }
+      {\osc} {
+        ~es.setOsc(index, \type, val)
+      }
+      {\filt} {
+        ~es.setFilt(index, \type, val)
+      }
+      {\amp} {
+        ~es.setAmp(\type, val)
+      }
+    }
+    {\envType} {
+      switch (module.kind)
+      {\lfo} {
+        ~es.setLFO(index, \env_type, val)
+      }
+      {\osc} {
+        ~es.setOsc(index, \env_type, val)
+      }
+      {\filt} {
+        ~es.setFilt(index, \env_type, val)
+      }
+      {\amp} {
+        ~es.setAmp(\env_type, val)
+      }
+    }
+    {\portamento} {
+      ~es.portamento_()
+    }
+    {\def} {
+      // shouldn't need this...
     };
-  }
-  {\type} {
-    switch (module.kind)
-    {\lfo} {
-      ~es.setLFO(index, \type, val)
-    }
-    {\osc} {
-      ~es.setOsc(index, \type, val)
-    }
-    {\filt} {
-      ~es.setFilt(index, \type, val)
-    }
-    {\amp} {
-      ~es.setAmp(\type, val)
-    }
-  }
-  {\envType} {
-    switch (module.kind)
-    {\lfo} {
-      ~es.setLFO(index, \env_type, val)
-    }
-    {\osc} {
-      ~es.setOsc(index, \env_type, val)
-    }
-    {\filt} {
-      ~es.setFilt(index, \env_type, val)
-    }
-    {\amp} {
-      ~es.setAmp(\env_type, val)
-    }
-  }
-  {\def} {
-    // shouldn't need this...
   };
 };
 
-~es.free;
-~es = ESynth(s, ~esm, 8);
-// parse model
-// todo... patch cords
-~esm.lfos.do { |lfo, i|
-  ~es.putLFO(i, lfo.def, lfo.rate, lfo.argList, lfo.global)
+~esinit = { |model|
+  var notes = [];
+  if (~es.notNil) {
+    notes = ~es.notes;
+  };
+  ~es.free;
+  ~es = ESynth(s, model, model.numVoices);
+  // parse model
+  ~es.portamento_(~esm.portamento);
+  ~es.mod_(~esm.mod);
+  ~es.bend_(~esm.bend);
+  model.lfos.do { |lfo, i|
+    ~es.putLFO(i, lfo.def, lfo.rate, lfo.argList, lfo.global)
+  };
+  model.oscs.do { |osc, i|
+    ~es.putOsc(i, osc.def, osc.argList)
+  };
+  model.filts.do { |filt, i|
+    ~es.putFilt(i, filt.def, filt.argList)
+  };
+  ~es.putAmp(model.amp.def, model.amp.argList);
+  model.patchCords.values.flat.do { |pc|
+    while { pc.notNil } {
+      ~newPatch.(pc);
+      pc = pc.patchCords[0];
+    };
+  };
+  ~es.notes = notes;
 };
-~esm.oscs.do { |osc, i|
-  ~es.putOsc(i, osc.def, osc.argList)
-};
-~esm.filts.do { |filt, i|
-  ~es.putFilt(i, filt.def, filt.argList)
-};
-~es.putAmp(~esm.amp.def, ~esm.amp.argList);
+~esinit.(~esm);
 s.plotTree;
 
 MIDIClient.init;
 MIDIIn.connectAll;
 MIDIdef.noteOn(\keyboardOn, { |vel, num| ~es.noteOn(num, vel) });
 MIDIdef.noteOff(\keyboardOff, { |vel, num| ~es.noteOff(num) });
-MIDIdef.bend(\bend, { |val| ~es.bend_(val.linlin(0, 16383, -2.0, 2.0)) });
+MIDIdef.bend(\bend, { |val| ~esm.bend_(val.linlin(0, 16383, -2.0, 2.0)) });
+MIDIdef.cc(\mod, { |val| ~esm.mod_(val.linlin(0, 127, 0, 1)) }, 1);
 )
-
-
-(
-ESynthDef.osc('Operator 4',
-  ['ALGO 1', 'ALGO 2', 'ALGO 3', 'ALGO 4', 'ALGO 5', 'ALGO 6', 'ALGO 7', 'ALGO 8'],
-  'ratio 1', [\kr, [1, 20, \exp, 0.0, 0], 0.1],
-  'amp 1', [\kr, [0, 20, 6, 0.0, 0.1], 0.1],
-  'ratio 2', [\kr, [1, 20, \exp, 0.0, 0], 0.1],
-  'amp 2', [\kr, [0, 20, 6, 0.0, 0], 0.1],
-  'ratio 3', [\kr, [1, 20, \exp, 0.0, 0], 0.1],
-  'amp 3', [\kr, [0, 20, 6, 0.0, 0], 0.1],
-  'ratio 4', [\kr, [1, 20, \exp, 0.0, 0], 0.1],
-  'amp 4', [\kr, [0, 20, 6, 0.0, 0], 0.1],
-  {
-    var feedback = 1;
-    var chans = [0];
-    var algo = FM7.modMatrix(
-      [0, 1, 1],
-      [1, 2, 1],
-      [2, 3, 1],
-      [3, 3, feedback]
-    );
-    ~freq = ~note.midicps;
-    FM7.ar([
-        [~freq * ~ratio_1, 0, ~amp_1],
-        [~freq * ~ratio_2, 0, ~amp_2],
-        [~freq * ~ratio_3, 0, ~amp_3],
-        [~freq * ~ratio_4, 0, ~amp_4],
-        [0, 0, 0],
-        [0, 0, 0],
-      ], algo).slice(chans).asArray.sum
-  }
-);
-)
-
-'amp 4'.asString.replace($ , $_).asSymbol
 
 s.record;
 s.stopRecording;
 
-~es.portamento_(0)
+~esm.portamento_(0.1)
+~esm.numVoices_(8)
+~esm.asEvent.postcs
+
+ESynthDef.oscs
+
 
 SynthDescLib.global.at('ESfiltARHouvilainen').def.draw
 

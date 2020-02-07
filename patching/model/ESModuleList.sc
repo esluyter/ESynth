@@ -28,4 +28,8 @@ ESModuleList : List {
   patchCords {
     ^this.collect(_.patchCords).flat;
   }
+
+  asArray {
+    ^this.collect(_.asEvent)
+  }
 }

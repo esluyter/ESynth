@@ -62,6 +62,13 @@ ESynth {
       }
     );
 
+    ESynthDef.lfo(\Mod,
+      [\positive, \bipolar],
+      {
+        Lag.kr(In.kr(\modbus.ir) * 2 - ~type, 0.05);
+      }
+    );
+
     ESynthDef.osc(\VCO,
       \tune, [\ar, [-48, 48, \lin, 0.0, 0], 1, 12, true],
       \fine, [\ar, [-2, 2, \lin, 0.0, 0], 0.01, 10, true],
@@ -78,18 +85,33 @@ ESynth {
     );
 
     ESynthDef.osc('Operator 4',
-      ['alg 1', 'alg 2', 'alg 3', 'alg 4', 'alg 5', 'alg 6', 'alg 7', 'alg 8'],
-      'ratio_1', [\kr, [1, 20, \exp, 0.0, 0], 0.1],
-      'amp_1', \kr,
-      'ratio_2', [\kr, [1, 20, \exp, 0.0, 0], 0.1],
-      'amp_2', \kr,
-      'ratio_3', [\kr, [1, 20, \exp, 0.0, 0], 0.1],
-      'amp_3', \kr,
-      'ratio_4', [\kr, [1, 20, \exp, 0.0, 0], 0.1],
-      'amp_4', \kr,
+      ['ALGO 1', 'ALGO 2', 'ALGO 3', 'ALGO 4', 'ALGO 5', 'ALGO 6', 'ALGO 7', 'ALGO 8'],
+      'ratio 1', [\kr, [1, 20, \exp, 0.0, 0], 0.1],
+      'amp 1', [\kr, [0, 20, 6, 0.0, 0.1], 0.1],
+      'ratio 2', [\kr, [1, 20, \exp, 0.0, 0], 0.1],
+      'amp 2', [\kr, [0, 20, 6, 0.0, 0], 0.1],
+      'ratio 3', [\kr, [1, 20, \exp, 0.0, 0], 0.1],
+      'amp 3', [\kr, [0, 20, 6, 0.0, 0], 0.1],
+      'ratio 4', [\kr, [1, 20, \exp, 0.0, 0], 0.1],
+      'amp 4', [\kr, [0, 20, 6, 0.0, 0], 0.1],
       {
-        //~freq = (~note + ~tune + ~fine).midicps;
-        DC.ar(0)
+        var feedback = 1;
+        var chans = [0];
+        var algo = FM7.modMatrix(
+          [0, 1, 1],
+          [1, 2, 1],
+          [2, 3, 1],
+          [3, 3, feedback]
+        );
+        ~freq = ~note.midicps;
+        FM7.ar([
+            [~freq * ~ratio_1, 0, ~amp_1],
+            [~freq * ~ratio_2, 0, ~amp_2],
+            [~freq * ~ratio_3, 0, ~amp_3],
+            [~freq * ~ratio_4, 0, ~amp_4],
+            [0, 0, 0],
+            [0, 0, 0],
+          ], algo).slice(chans).asArray.sum
       }
     );
 
@@ -160,7 +182,7 @@ ESynth {
     try {
       globalToUnit = toUnitFunc.(voices[0]).isNil;
     };
-    [globalLFO, globalToUnit].postln;
+    //[globalLFO, globalToUnit].postln;
     if (globalLFO and: globalToUnit) {
       fromUnit = globals.lfos[lfoIndex];
       toUnit = toUnitFunc.(globals);
@@ -280,6 +302,22 @@ ESynth {
   noteOff { |num|
     globals.noteOff(num);
     voices.do(_.noteOff(num));
+  }
+
+  notes {
+    var ret = [];
+    voices.do { |voice, i|
+      if (voice.gate == 1) {
+        ret = ret.add([voice.note, voice.vel])
+      }
+    };
+    ^ret;
+  }
+
+  notes_ { |notes|
+    notes.do { |note|
+      this.noteOn(*note);
+    }
   }
 
   bend_ { |value|

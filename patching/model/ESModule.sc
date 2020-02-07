@@ -177,18 +177,18 @@ ESModule {
 
   index { ^list.indexOf(this); }
 
-  patchTo { |module, toInlet = 0|
+  patchTo { |module, toInlet = 0, amt = 0|
     if (kind != \lfo) { ^false };
-    module.patchFrom(this, toInlet);
+    module.patchFrom(this, toInlet, amt);
   }
 
-  patchFrom { |fromLFO, toInlet = 0|
+  patchFrom { |fromLFO, toInlet = 0, amt = 0|
     toInlet = this.prGetModIndex(toInlet);
     if (fromLFO.isNil) {
       patchCords[toInlet] = nil;
     } {
       if (toInlet < params.size) {
-        patchCords[toInlet] = ESMPatchCord(fromLFO, this, toInlet);
+        patchCords[toInlet] = ESMPatchCord(fromLFO, this, toInlet, amt);
       }
     };
     this.changed(\patchCords);
@@ -233,7 +233,25 @@ ESModule {
     DoesNotUnderstandError(this, selector, args).throw;
   }
 
+  params_ { |paramArr|
+    paramArr.do { |val, i|
+      params[i].value_(val);
+    }
+  }
+
   printOn { | stream |
     stream << "ESModule<" << if (def.notNil) { def.name } { "nil" } << ">";
+  }
+
+  asEvent {
+    if (def.isNil) { ^nil };
+    ^(
+      def: def.name,
+      rate: rate,
+      params: params.collect(_.value),
+      type: type,
+      envType: envType,
+      global: global
+    )
   }
 }

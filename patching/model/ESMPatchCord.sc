@@ -6,8 +6,20 @@ ESMPatchCord {
     ^super.newCopyArgs(fromLFO, toModule, toInlet).init(amt, color);
   }
 
+  asEvent {
+    ^(
+      fromIndex: this.fromIndex,
+      toCategory: this.toCategory,
+      rootToIndex: this.rootToIndex,
+      rootToInlet: this.rootToInlet,
+      toDepth: this.toDepth,
+      amt: this.amt,
+      patchCords: this.patchCords.collect(_.asEvent)
+    )
+  }
+
   init { |amt, argcolor|
-    params = [ESMParam(this, ESynthDef.mod.params[0])];
+    params = [ESMParam(this, ESynthDef.mod.params[0]).value_(amt)];
     color = argcolor ?? Color.rand;
     patchCords = [nil];
 
@@ -33,11 +45,18 @@ ESMPatchCord {
     }
   }
 
-  patchFrom { |fromLFO|
+  toCategory {
+    ^(this.rootModule.kind ++ \s).asSymbol
+  }
+  rootToIndex {
+    ^this.rootModule.index
+  }
+
+  patchFrom { |fromLFO, amt = 0|
     if (fromLFO.isNil) {
       patchCords[0] = nil;
     } {
-      patchCords[0] = ESMPatchCord(fromLFO, this, 0);
+      patchCords[0] = ESMPatchCord(fromLFO, this, 0, amt);
     };
     {
       var rootmodule = this.rootModule;
