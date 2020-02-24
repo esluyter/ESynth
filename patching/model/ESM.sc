@@ -1,10 +1,10 @@
 ESM {
-  var <numVoices, <portamento, <mod, <bend;
+  var <numVoices, <portamento, <bendRange, <mod, <bend;
   var <lfos, <oscs, <filts, <amps;
   var connections;
 
-  *new { |numVoices = 8, numLFOs = 20, numOscs = 6, numFilts = 4, portamento = 0, mod = 0, bend = 0|
-    ^super.newCopyArgs(numVoices, portamento, mod, bend).init(numLFOs, numOscs, numFilts).prDefaultConfig;
+  *new { |numVoices = 8, numLFOs = 20, numOscs = 6, numFilts = 4, portamento = 0, mod = 0, bend = 0, bendRange = 2|
+    ^super.newCopyArgs(numVoices, portamento, bendRange, mod, bend).init(numLFOs, numOscs, numFilts).prDefaultConfig;
   }
 
   init { |numLFOs, numOscs, numFilts|
@@ -65,6 +65,10 @@ ESM {
     bend = value;
     this.changed(\bend, bend, this);
   }
+  bendRange_ { |value|
+    bendRange = value;
+    this.changed(\bendRange, bendRange, this);
+  }
 
   numLFOs { ^lfos.size }
   numOscs { ^oscs.size }
@@ -95,6 +99,7 @@ ESM {
       portamento: portamento,
       mod: mod,
       bend: bend,
+      bendRange: bendRange,
       lfos: lfos.asArray,
       oscs: oscs.asArray,
       filts: filts.asArray,
@@ -112,10 +117,11 @@ ESM {
     var portamento = e.portamento;
     var mod = e.mod;
     var bend = e.bend;
-    var esm = this.new(numVoices, numLFOs, numOscs, numFilts, portamento, mod, bend);
+    var bendRange = e.bendRange;
+    var esm = this.new(numVoices, numLFOs, numOscs, numFilts, portamento, mod, bend, bendRange);
     e.lfos.do { |lfo, i|
       var def = if (lfo.notNil) { lfo.def } { nil };
-      var rate = if (lfo.notNil) { lfo.rate } { nil };
+      var rate = if (lfo.notNil) { lfo[\rate] } { nil };
       var global = if (lfo.notNil) { lfo.global } { nil };
       var newLFO = esm.putLFO(i, def, rate, false, false, global);
       if (lfo.notNil) {

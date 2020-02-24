@@ -3,7 +3,7 @@ ESVoice {
   var <modgroup, <lfogroup, <oscgroup, <filtgroups;
   var <lfos, <oscs, <filtmods, <filts, <amp;
   var <oscbus, <stbus, <monobus;
-  var <note = 60, <bend = 0, <portamento = 0, <notebus, <gatebus, <velbus, <modbus;
+  var <note = 60, <bendRange = 2, <bend = 0, <portamento = 0, <notebus, <gatebus, <velbus, <modbus;
   var <noteStack, <notePriorityFunc;
 
 
@@ -135,6 +135,11 @@ ESVoice {
   }
 
   amps { ^[amp] }
+
+  bendRange_ { |value|
+    bendRange = value;
+    notesyn.set(\bendRange, value);
+  }
 
   bend_ { |value|
     bend = value;

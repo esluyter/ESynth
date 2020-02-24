@@ -69,6 +69,13 @@ ESynth {
       }
     );
 
+    ESynthDef.lfo(\Vel,
+      [\positive, \bipolar],
+      {
+        Lag.kr(~vel * 2 - ~type, 0.05);
+      }
+    );
+
     ESynthDef.osc(\VCO,
       \tune, [\ar, [-48, 48, \lin, 0.0, 0], 1, 12, true],
       \fine, [\ar, [-2, 2, \lin, 0.0, 0], 0.01, 10, true],
@@ -318,6 +325,11 @@ ESynth {
     notes.do { |note|
       this.noteOn(*note);
     }
+  }
+
+  bendRange_ { |value|
+    globals.bendRange = value;
+    voices.do(_.bendRange_(value));
   }
 
   bend_ { |value|

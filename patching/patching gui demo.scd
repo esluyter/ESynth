@@ -1,9 +1,14 @@
 BootWindow.show;
 
+ESMPresets.put('Synthy Klavinetish', ~esm.asEvent)
+ESMPresets.put('FTB lead', ~esm.asEvent)
+ESMPresets.put('Robot voice glottal lead B', ~esm.asEvent)
+ESMPresets.at('Buzzy Brass Pad').lfos
+ESMPresets.all.keys.asArray.sort
 (
 ~esm.free;
 //~esm = ESM();
-~esm = ESM.fromEvent(ESMPresets.at('Default'));
+~esm = ESM.fromEvent(ESMPresets.at('Simple Accordion'));
 
 Window.closeAll;
 ~window = Window.new("Lines", Rect(0, 200, 880, 975)).front;
@@ -185,6 +190,7 @@ Window.closeAll;
   ~es.portamento_(~esm.portamento);
   ~es.mod_(~esm.mod);
   ~es.bend_(~esm.bend);
+  ~es.bendRange_(~esm.bendRange);
   model.lfos.do { |lfo, i|
     ~es.putLFO(i, lfo.def, lfo.rate, lfo.argList, lfo.global)
   };
@@ -204,25 +210,29 @@ Window.closeAll;
   ~es.notes = notes;
 };
 ~esinit.(~esm);
-s.plotTree;
+//s.plotTree;
 
 MIDIClient.init;
 MIDIIn.connectAll;
 MIDIdef.noteOn(\keyboardOn, { |vel, num| ~es.noteOn(num, vel) });
 MIDIdef.noteOff(\keyboardOff, { |vel, num| ~es.noteOff(num) });
-MIDIdef.bend(\bend, { |val| ~esm.bend_(val.linlin(0, 16383, -2.0, 2.0)) });
+MIDIdef.bend(\bend, { |val| ~esm.bend_(val.linlin(0, 16383, -1, 1)) });
 MIDIdef.cc(\mod, { |val| ~esm.mod_(val.linlin(0, 127, 0, 1)) }, 1);
 )
 
+~esm.filts[0].params[7].
+
 s.record;
 s.stopRecording;
-
+~es.globals.portamento
 ~esm.portamento_(0.1)
 ~esm.numVoices_(8)
+~esm.bendRange_(7)
 ~esm.asEvent.postcs
 
-ESynthDef.oscs
 
-
+~es.free
 SynthDescLib.global.at('ESfiltARHouvilainen').def.draw
+
+
 

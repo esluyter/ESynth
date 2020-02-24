@@ -1,6 +1,8 @@
 ESView : SCViewHolder {
   var connections;
   var <model, <patchKnobs, <lfoViews, <oscViews, <filtViews, <ampViews;
+  var <portamentoKnob, <portamentoBox, <bendKnob, <bendBox, <voicesKnob, <voicesBox;
+  var bendSpec, portamentoSpec, voicesSpec;
 
   *new { |parent, bounds, model|
     ^super.new.init(parent, bounds).model_(model);
@@ -44,11 +46,123 @@ ESView : SCViewHolder {
 
     ampViews = [AmpView(view, Rect(14, 887, 293, 75), model.amps[0])];
 
+    portamentoSpec = ESynthDef.note.params[0];
+    bendSpec = (spec: ControlSpec(0, 24, 4, 0.0, 2), step: 0.1, shift_scale: 10);
+    voicesSpec = (spec: ControlSpec(1, 16, 0, 1, 8), step: 1, shift_scale: 4);
+
+    portamentoKnob = Knob(view, Rect(350, 909, 25, 25))
+      .step_(portamentoSpec.step / portamentoSpec.spec.range)
+      .shift_scale_(portamentoSpec.shift_scale)
+      .value_(portamentoSpec.spec.unmap(model.portamento))
+      .mode_(\vert)
+      .color_([Color.gray(0.8), Color.white, Color.clear, Color.black]);
+    portamentoBox = NumberBox(view, Rect(349, 933, 27, 11))
+      .step_(portamentoSpec.step)
+      .scroll_step_(portamentoSpec.step)
+      .shift_scale_(portamentoSpec.shift_scale)
+      .clipLo_(portamentoSpec.spec.minval)
+      .clipHi_(portamentoSpec.spec.maxval)
+      .value_(model.portamento)
+      .font_(Font.monospace.size_(8))
+      .background_(Color.grey(0.04))
+      .stringColor_(Color.white)
+      .normalColor_(Color.white)
+      .typingColor_(Color.hsv(0, 0.5, 1))
+      .align_(\center)
+      .maxDecimals_(4);
+    StaticText(view, Rect(340, 945, 45, 10))
+      .font_(Font.sansSerif.size_(8))
+      .align_(\center)
+      .stringColor_(Color.white)
+      .string_("portamento");
+
+    bendKnob = Knob(view, Rect(400, 909, 25, 25))
+      .step_(bendSpec.step / bendSpec.spec.range)
+      .shift_scale_(bendSpec.shift_scale)
+      .value_(bendSpec.spec.unmap(model.bendRange))
+      .mode_(\vert)
+      .color_([Color.gray(0.8), Color.white, Color.clear, Color.black]);
+    bendBox = NumberBox(view, Rect(399, 933, 27, 11))
+      .step_(bendSpec.step)
+      .scroll_step_(bendSpec.step)
+      .shift_scale_(bendSpec.shift_scale)
+      .clipLo_(bendSpec.spec.minval)
+      .clipHi_(bendSpec.spec.maxval)
+      .value_(model.bendRange)
+      .font_(Font.monospace.size_(8))
+      .background_(Color.grey(0.04))
+      .stringColor_(Color.white)
+      .normalColor_(Color.white)
+      .typingColor_(Color.hsv(0, 0.5, 1))
+      .align_(\center)
+      .maxDecimals_(4);
+    StaticText(view, Rect(390, 945, 45, 10))
+      .font_(Font.sansSerif.size_(8))
+      .align_(\center)
+      .stringColor_(Color.white)
+      .string_("bendRange");
+
+    voicesKnob = Knob(view, Rect(450, 909, 25, 25))
+      .step_(voicesSpec.step / voicesSpec.spec.range)
+      .shift_scale_(voicesSpec.shift_scale)
+      .value_(voicesSpec.spec.unmap(model.numVoices))
+      .mode_(\vert)
+      .color_([Color.gray(0.8), Color.white, Color.clear, Color.black]);
+    voicesBox = NumberBox(view, Rect(449, 933, 27, 11))
+      .step_(voicesSpec.step)
+      .scroll_step_(voicesSpec.step)
+      .shift_scale_(voicesSpec.shift_scale)
+      .clipLo_(voicesSpec.spec.minval)
+      .clipHi_(voicesSpec.spec.maxval)
+      .value_(model.numVoices)
+      .font_(Font.monospace.size_(8))
+      .background_(Color.grey(0.04))
+      .stringColor_(Color.white)
+      .normalColor_(Color.white)
+      .typingColor_(Color.hsv(0, 0.5, 1))
+      .align_(\center)
+      .maxDecimals_(4);
+    StaticText(view, Rect(440, 945, 45, 10))
+      .font_(Font.sansSerif.size_(8))
+      .align_(\center)
+      .stringColor_(Color.white)
+      .string_("numVoices");
+
     this.prMakePatches.();
 
     connections.free;
     connections = ConnectionList.make {
       model.signal(\patchCords).connectTo(this.methodSlot("prMakePatches"));
+      model.signal(\portamento).connectTo {
+        portamentoKnob.value = portamentoSpec.spec.unmap(model.portamento);
+        portamentoBox.value = model.portamento;
+      };
+      portamentoKnob.signal(\value).connectTo {
+        model.portamento = portamentoSpec.spec.map(portamentoKnob.value);
+      };
+      portamentoBox.signal(\value).connectTo {
+        model.portamento = portamentoBox.value;
+      };
+      model.signal(\bendRange).connectTo {
+        bendKnob.value = bendSpec.spec.unmap(model.bendRange);
+        bendBox.value = model.bendRange;
+      };
+      bendKnob.signal(\value).connectTo {
+        model.bendRange = bendSpec.spec.map(bendKnob.value);
+      };
+      bendBox.signal(\value).connectTo {
+        model.bendRange = bendBox.value;
+      };
+      model.signal(\numVoices).connectTo {
+        voicesKnob.value = voicesSpec.spec.unmap(model.numVoices);
+        voicesBox.value = model.numVoices;
+      };
+      voicesKnob.signal(\value).connectTo {
+        model.numVoices = voicesSpec.spec.map(voicesKnob.value);
+      };
+      voicesBox.signal(\value).connectTo {
+        model.numVoices = voicesBox.value;
+      };
     };
   }
 

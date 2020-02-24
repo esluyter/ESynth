@@ -2,7 +2,7 @@ ESGlobals {
   var <synthgroup, <group, <notesyn;
   var <modgroup, <lfogroup;
   var <lfos;
-  var <note = 60, <bend = 0, <portamento = 0, <notebus, <gatebus, <velbus, <modbus;
+  var <note = 60, <bend = 0, <bendRange = 2, <portamento = 0, <notebus, <gatebus, <velbus, <modbus;
   var <noteStack, <notePriorityFunc;
 
   *new { |synthgroup, numlfos = 20|
@@ -49,6 +49,11 @@ ESGlobals {
 
   setLFO { |index ...args|
     lfos[index].set(*args);
+  }
+
+  bendRange_ { |value|
+    bendRange = value;
+    notesyn.set(\bendRange, value);
   }
 
   bend_ { |value|
