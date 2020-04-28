@@ -66,7 +66,7 @@ ESynthDef {
     velin = In.kr(\velbus.ir);
     envamt = e[\env] ?? 0;
     if (autoEnv) {
-      var envType = \env_type.kr(0); // 0 - sustain, 1 - oneshot, 2 - retrig
+      var envType = \envType.kr(0); // 0 - sustain, 1 - oneshot, 2 - retrig
       var loopNode = Select.kr(envType, [-99, -99, 0]);
       var relNode = Select.kr(envType, [2, -99, 2]);
       var gateDel = Env([0, 0, 0, 1, 0], [0, e[\del], 0, 0], \lin, 3).kr(0, e[\gate]);

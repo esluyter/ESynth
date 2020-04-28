@@ -1,7 +1,7 @@
 BootWindow.show;
 
 ESMPresets.put('Synthy Klavinetish', ~esm.asEvent)
-ESMPresets.put('FTB lead', ~esm.asEvent)
+ESMPresets.put('8bit Sqr', ~esm.asEvent)
 ESMPresets.put('Robot voice glottal lead B', ~esm.asEvent)
 ESMPresets.at('Buzzy Brass Pad').lfos
 ESMPresets.all.keys.asArray.sort
@@ -11,7 +11,7 @@ ESMPresets.all.keys.asArray.sort
   //~esm = ESM();
   ~esm = ESM.fromEvent(ESMPresets.at(presetName));
   //Window.closeAll;
-  ~window.close;
+  if (~window.notNil) { ~window.close };
   ~window = Window.new("Lines", Rect(0, 200, 880, min(975, Window.screenBounds.height - 25))).background_(Color(0.1, 0, 0.1)).front;
   ~window.acceptsMouseOver = true;
   ~sv = ScrollView(~window, ~window.bounds.resizeBy(0, -30).origin_(0@30)).hasBorder_(false);
@@ -169,16 +169,16 @@ ESMPresets.all.keys.asArray.sort
       {\envType} {
         switch (module.kind)
         {\lfo} {
-          ~es.setLFO(index, \env_type, val)
+          ~es.setLFO(index, \envType, val)
         }
         {\osc} {
-          ~es.setOsc(index, \env_type, val)
+          ~es.setOsc(index, \envType, val)
         }
         {\filt} {
-          ~es.setFilt(index, \env_type, val)
+          ~es.setFilt(index, \envType, val)
         }
         {\amp} {
-          ~es.setAmp(\env_type, val)
+          ~es.setAmp(\envType, val)
         }
       }
       {\portamento} {
@@ -247,5 +247,7 @@ s.stopRecording;
 ~es.free
 SynthDescLib.global.at('ESfiltARHouvilainen').def.draw
 
-
-
+~esm.filts[0].argList
+~esm.amp.argList
+~es.voices[0].amp.synth.get(\envType, _.postln)
+~es.voices[0].filts[0].synth.get(\type, _.postln)

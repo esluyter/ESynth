@@ -27,6 +27,21 @@ ESynth {
       }
     );
 
+    ESynthDef.lfo(\Sqr,
+      [\random, \gate],
+      \delay, [\kr, [0, 10, 4], 0.03],
+      \freq, [\ar, [[0.01, 200, 6, 0, 2], [0.1, 10000, 6, 0, 100]], [0.5, 8]],
+      \key, \kr,
+      \duty, [\kr, [0, 1, 'linear', 0.0, 0.5]],
+      {
+        var env = Integrator.kr(ControlDur.ir / ~delay, 1 - (Changed.kr(~gate) * ~gate)).clip(0, 1);
+        LFPulse.kr(~freq, 0, ~duty) * env;
+      }, {
+        var env = Integrator.kr(ControlDur.ir / ~delay, 1 - (Changed.kr(~gate) * ~gate)).clip(0, 1);
+        LFPulse.ar(~freq, 0, ~duty) * env;
+      }
+    );
+
     ESynthDef.lfo(\Noise,
       [\cubic, \linear, \none],
       \delay, [\kr, [0, 10, 4], 0.03],
@@ -137,6 +152,15 @@ ESynth {
       {
         ~cutoff = ~cutoff * ((~env + ~vel) * 100 + (~key * 1.05)).midiratio;
         HouvilainenFilter.ar(~in, ~cutoff, ~res, (~type + 1) % 8);
+      }
+    );
+
+    ESynthDef.filt(\Decimator,
+      \rate, [\ar, [1000, 48000], 25],
+      \bits, [\kr, [1, 16]],
+      {
+        //~cutoff = ~cutoff * ((~env + ~vel) * 100 + (~key * 1.05)).midiratio;
+        Decimator.ar(~in * 10, ~rate, ~bits) * 0.1;
       }
     );
 
