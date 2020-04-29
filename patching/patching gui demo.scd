@@ -1,9 +1,10 @@
 BootWindow.show;
 
-ESMPresets.put('Synthy Klavinetish', ~esm.asEvent)
-ESMPresets.put('8bit Sqr', ~esm.asEvent)
+ESMPresets.put('FM Clarinet', ~esm.asEvent)
+ESMPresets.put('8bit Sqr fuckedup', ~esm.asEvent)
 ESMPresets.put('Robot voice glottal lead B', ~esm.asEvent)
 ESMPresets.at('Buzzy Brass Pad').lfos
+ESMPresets.at('Ethereal trumpets').postcs
 ESMPresets.all.keys.asArray.sort
 (
 ~loadES = { |presetName = 'Default'|
@@ -154,16 +155,16 @@ ESMPresets.all.keys.asArray.sort
       {\type} {
         switch (module.kind)
         {\lfo} {
-          ~es.setLFO(index, \type, val)
+          ~es.setLFOType(index, val)
         }
         {\osc} {
-          ~es.setOsc(index, \type, val)
+          ~es.setOscType(index, val)
         }
         {\filt} {
-          ~es.setFilt(index, \type, val)
+          ~es.setFiltType(index, val)
         }
         {\amp} {
-          ~es.setAmp(\type, val)
+          ~es.setAmpType(val)
         }
       }
       {\envType} {
@@ -203,15 +204,15 @@ ESMPresets.all.keys.asArray.sort
     ~es.bend_(~esm.bend);
     ~es.bendRange_(~esm.bendRange);
     model.lfos.do { |lfo, i|
-      ~es.putLFO(i, lfo.def, lfo.rate, lfo.argList, lfo.global)
+      ~es.putLFO(i, lfo.def, lfo.rate, lfo.argList, lfo.global, lfo.type)
     };
     model.oscs.do { |osc, i|
-      ~es.putOsc(i, osc.def, osc.argList)
+      ~es.putOsc(i, osc.def, osc.argList, osc.type)
     };
     model.filts.do { |filt, i|
-      ~es.putFilt(i, filt.def, filt.argList)
+      ~es.putFilt(i, filt.def, filt.argList, filt.type)
     };
-    ~es.putAmp(model.amp.def, model.amp.argList);
+    ~es.putAmp(model.amp.def, model.amp.argList, model.amp.type);
     model.patchCords.values.flat.do { |pc|
       while { pc.notNil } {
         ~newPatch.(pc);
@@ -251,3 +252,17 @@ SynthDescLib.global.at('ESfiltARHouvilainen').def.draw
 ~esm.amp.argList
 ~es.voices[0].amp.synth.get(\envType, _.postln)
 ~es.voices[0].filts[0].synth.get(\type, _.postln)
+~es.voices[0].filts[0].args
+
+
+(
+ESynthDef.osc(\test,
+  (0..10).collect(_.asSymbol),
+  \duty, \kr,
+  {
+    VarSaw.ar(~note.midicps * (~type + 1), width: ~duty);
+  }
+);
+)
+
+ESynthDef.lfos[\Sin].dump

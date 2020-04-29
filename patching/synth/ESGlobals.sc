@@ -38,17 +38,20 @@ ESGlobals {
     ^ESUnit.modUnits(fromUnit, toUnit, param, amt, modgroup);
   }
 
-  putLFO { |index, name, rate = 'control', args = (#[])|
+  putLFO { |index, name, rate = 'control', args = (#[]), type|
     lfos[index].free;
     lfos[index] = nil;
     if(name.notNil) {
       args = args ++ [notebus: notebus, velbus: velbus, gatebus: gatebus, modbus: modbus];
-      lfos[index] = ESUnit.lfo(name, args, lfogroup, rate);
+      lfos[index] = ESUnit.lfo(name, args, lfogroup, rate, type: type);
     };
   }
 
   setLFO { |index ...args|
     lfos[index].set(*args);
+  }
+  setLFOType { |index, type|
+    lfos[index].type_(type);
   }
 
   bendRange_ { |value|

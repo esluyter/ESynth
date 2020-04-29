@@ -26,29 +26,32 @@ ESynthDef {
   }
 
   prAddSynthDefs {
-    if (arfunc.notNil) {
-      SynthDef(this.arDefName, {
-        var out = \out.kr;
-        var sig = this.prMakeParamEnvir.use(arfunc);
-        if (type == \filt) { ReplaceOut.ar(out, sig) } { Out.ar(out, sig) };
-      }).add;
-    };
-    if (krfunc.notNil) {
-      SynthDef(this.krDefName, {
-        var out = \out.kr;
-        var sig = this.prMakeParamEnvir('control').use(krfunc);
-        Out.kr(out, sig);
-      }).add;
-    };
+    max(typelist.size, 1).do { |type_i|
+      if (arfunc.notNil) {
+        SynthDef(this.arDefName(type_i), {
+          var out = \out.kr;
+          var sig = this.prMakeParamEnvir(type_i).use(arfunc);
+          if (type == \filt) { ReplaceOut.ar(out, sig) } { Out.ar(out, sig) };
+        }).add;
+      };
+      if (krfunc.notNil) {
+        SynthDef(this.krDefName(type_i), {
+          var out = \out.kr;
+          var sig = this.prMakeParamEnvir(type_i, 'control').use(krfunc);
+          Out.kr(out, sig);
+        }).add;
+      };
+    }
   }
 
-  arDefName { ^("ES" ++ type ++ "AR" ++ name).asSymbol }
-  krDefName { ^("ES" ++ type ++ "KR" ++ name).asSymbol }
+  arDefName { |type_i = 0| ^("ES" ++ type ++ "AR" ++ name ++ "_" ++ type_i).asSymbol }
+  krDefName { |type_i = 0| ^("ES" ++ type ++ "KR" ++ name ++ "_" ++ type_i).asSymbol }
 
-  prMakeParamEnvir { |rate = 'audio'|
+  prMakeParamEnvir { |type_i, rate = 'audio'|
     var velamt, velin, envamt;
     var e = Environment.make(envirFunc);
-    e[\type] = \type.kr;
+    //e[\type] = \type.kr;
+    e[\type] = type_i;
     params.do { |param|
       // NOT THE BEST SPOT FOR THIS!!
       var name = param.name;

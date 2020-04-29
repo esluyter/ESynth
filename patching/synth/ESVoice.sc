@@ -57,38 +57,44 @@ ESVoice {
     ^ESUnit.modUnits(fromUnit, toUnit, param, amt, modgroup);
   }
 
-  putLFO { |index, name, rate = 'control', args = (#[])|
+  putLFO { |index, name, rate = 'control', args = (#[]), type|
     lfos[index].free;
     lfos[index] = nil;
     if(name.notNil) {
       args = args ++ [notebus: notebus, velbus: velbus, gatebus: gatebus, modbus: modbus];
-      lfos[index] = ESUnit.lfo(name, args, lfogroup, rate);
+      lfos[index] = ESUnit.lfo(name, args, lfogroup, rate, type: type);
     };
   }
 
   setLFO { |index ...args|
     lfos[index].set(*args);
   }
+  setLFOType { |index, type|
+    lfos[index].type_(type);
+  }
 
-  putOsc { |index, name, args = (#[])|
+  putOsc { |index, name, args = (#[]), type|
     oscs[index].free;
     oscs[index] = nil;
     if (name.notNil) {
       args = args ++ [notebus: notebus, velbus: velbus];
-      oscs[index] = ESUnit.osc(name, args, oscgroup, oscbus)
+      oscs[index] = ESUnit.osc(name, args, oscgroup, oscbus, type: type)
     };
   }
 
   setOsc { |index ...args|
     oscs[index].set(*args);
   }
+  setOscType { |index, type|
+    oscs[index].type_(type);
+  }
 
-  putFilt { |index, name, args = (#[])|
+  putFilt { |index, name, args = (#[]), type|
     filts[index].free;
     filts[index] = nil;
     if (name.notNil) {
       args = args ++ [notebus: notebus, velbus: velbus, gatebus: gatebus];
-      filts[index] = ESUnit.filt(name, args, filtgroups[(index / 2).floor], monobus);
+      filts[index] = ESUnit.filt(name, args, filtgroups[(index / 2).floor], monobus, type: type);
     };
     this.prCheckFilts;
   }
@@ -120,18 +126,24 @@ ESVoice {
   setFilt { |index ...args|
     filts[index].set(*args);
   }
+  setFiltType { |index, type|
+    filts[index].type_(type);
+  }
 
-  putAmp { |name, args = (#[])|
+  putAmp { |name, args = (#[]), type|
     amp.free;
     amp = nil;
     if (name.notNil) {
       args = args ++ [inmono: monobus, instereo: stbus, notebus: notebus, velbus: velbus, gatebus: gatebus];
-      amp = ESUnit.amp(name, args, [group, \addToTail], 0);
+      amp = ESUnit.amp(name, args, [group, \addToTail], 0, type: type);
     };
   }
 
   setAmp { |...args|
     amp.set(*args);
+  }
+  setAmpType { |type|
+    amp.type_(type);
   }
 
   amps { ^[amp] }

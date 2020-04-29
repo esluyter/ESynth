@@ -215,7 +215,7 @@ ESModule {
   argList {
     var pairs = params.collect { |param| [param.name, param.value] };
     if (envType.notNil) { pairs = pairs.add([\envType, envType]) };
-    if (type.notNil) { pairs = pairs.add([\type, type]) };
+    //if (type.notNil) { pairs = pairs.add([\type, type]) };
     ^pairs.flat;
   }
 

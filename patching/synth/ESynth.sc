@@ -108,8 +108,8 @@ ESynth {
 
     ESynthDef.osc('Operator 4',
       ['ALGO 1', 'ALGO 2', 'ALGO 3', 'ALGO 4', 'ALGO 5', 'ALGO 6', 'ALGO 7', 'ALGO 8'],
-      'ratio 1', [\kr, [1, 20, \exp, 0.0, 0], 0.1],
-      'amp 1', [\kr, [0, 20, 6, 0.0, 0.1], 0.1],
+      'feedback', [\kr, [0, 4], 0.05],
+      'amp 1', [\kr, [0, 20, 6, 0.0, 1], 0.1],
       'ratio 2', [\kr, [1, 20, \exp, 0.0, 0], 0.1],
       'amp 2', [\kr, [0, 20, 6, 0.0, 0], 0.1],
       'ratio 3', [\kr, [1, 20, \exp, 0.0, 0], 0.1],
@@ -117,23 +117,61 @@ ESynth {
       'ratio 4', [\kr, [1, 20, \exp, 0.0, 0], 0.1],
       'amp 4', [\kr, [0, 20, 6, 0.0, 0], 0.1],
       {
-        var feedback = 1;
-        var chans = [0];
-        var algo = FM7.modMatrix(
-          [0, 1, 1],
-          [1, 2, 1],
-          [2, 3, 1],
-          [3, 3, feedback]
-        );
+        var feedback = ~feedback;
+        var chans = [[0], [0], [0], [0], [0, 2], [0, 1, 2], [0, 1, 2], [0, 1, 2, 3]][~type];
+        var algo = [
+          FM7.modMatrix(
+            [0, 1, 1],
+            [1, 2, 1],
+            [2, 3, 1],
+            [3, 3, feedback]
+          ),
+          FM7.modMatrix(
+            [0, 1, 1],
+            [1, 2, 1],
+            [1, 3, 1],
+            [3, 3, feedback]
+          ),
+          FM7.modMatrix(
+            [0, 1, 1],
+            [1, 2, 1],
+            [0, 3, 1],
+            [3, 3, feedback]
+          ),
+          FM7.modMatrix(
+            [0, 1, 1],
+            [0, 2, 1],
+            [2, 3, 1],
+            [3, 3, feedback]
+          ),
+          FM7.modMatrix(
+            [0, 1, 1],
+            [2, 3, 1],
+            [3, 3, feedback]
+          ),
+          FM7.modMatrix(
+            [0, 3, 1],
+            [1, 3, 1],
+            [2, 3, 1],
+            [3, 3, feedback]
+          ),
+          FM7.modMatrix(
+            [2, 3, 1],
+            [3, 3, feedback]
+          ),
+          FM7.modMatrix(
+            [3, 3, feedback]
+          ),
+        ][~type];
         ~freq = ~note.midicps;
         FM7.ar([
-            [~freq * ~ratio_1, 0, ~amp_1],
+            [~freq, 0, ~amp_1],
             [~freq * ~ratio_2, 0, ~amp_2],
             [~freq * ~ratio_3, 0, ~amp_3],
             [~freq * ~ratio_4, 0, ~amp_4],
             [0, 0, 0],
             [0, 0, 0],
-          ], algo).slice(chans).asArray.sum
+          ], algo).slice(chans).asArray.sum * 0.1
       }
     );
 
@@ -272,13 +310,13 @@ ESynth {
     };
   }
 
-  putLFO { |index, name, rate = 'control', args = (#[]), global = false|
+  putLFO { |index, name, rate = 'control', args = (#[]), global = false, type|
     if (global) {
-      globals.putLFO(index, name, rate, args);
+      globals.putLFO(index, name, rate, args, type);
       voices.do(_.putLFO(index, nil));
     } {
       globals.putLFO(index, nil);
-      voices.do(_.putLFO(index, name, rate, args));
+      voices.do(_.putLFO(index, name, rate, args, type));
     };
   }
 
@@ -289,21 +327,34 @@ ESynth {
       voices.do(_.setLFO(index, *args));
     };
   }
+  setLFOType { |index, type|
+    if (globals.lfos[index].notNil) {
+      globals.setLFOType(index, type);
+    } {
+      voices.do(_.setLFOType(index, type));
+    };
+  }
 
-  putOsc { |index, name, args = (#[])|
-    voices.do(_.putOsc(index, name, args));
+  putOsc { |index, name, args = (#[]), type|
+    voices.do(_.putOsc(index, name, args, type));
   }
 
   setOsc { |index ...args|
     voices.do(_.setOsc(index, *args));
   }
+  setOscType { |index, type|
+    voices.do(_.setOscType(index, type));
+  }
 
-  putFilt { |index, name, args = (#[])|
-    voices.do(_.putFilt(index, name, args));
+  putFilt { |index, name, args = (#[]), type|
+    voices.do(_.putFilt(index, name, args, type));
   }
 
   setFilt { |index ...args|
     voices.do(_.setFilt(index, *args));
+  }
+  setFiltType { |index, type|
+    voices.do(_.setFiltType(index, type));
   }
 
   putAmp { |...args|
@@ -312,6 +363,9 @@ ESynth {
 
   setAmp { |...args|
     voices.do(_.setAmp(*args));
+  }
+  setAmpType { |type|
+    voices.do(_.setAmpType(type));
   }
 
   numVoices_ { |value|

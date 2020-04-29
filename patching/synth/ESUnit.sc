@@ -1,7 +1,7 @@
 ESUnit {
   var <def, <args, <group,
       <rate, // \audio or \control
-      <bus, <freebus = false, <synth, <mods, <outputMods, <fromUnit, <toUnit, <paramindex;
+      <bus, <type, <addAction, <freebus = false, <synth, <mods, <outputMods, <fromUnit, <toUnit, <paramindex;
 
   *note { |portamento = 0, group, bus|
     ^this.new(ESynthDef.note, [portamento: 0, note: 60, bend: 0], group, \control, bus);
@@ -18,68 +18,79 @@ ESUnit {
       "Must supply valid parameter (int or symbol)".warn;
       ^nil;
     };
-    ^this.new(ESynthDef.mod, [in: fromUnit.bus, amt: amt], group, fromUnit.rate, nil, 1).initMod(fromUnit, toUnit, paramindex);
+    ^this.new(ESynthDef.mod, [in: fromUnit.bus, amt: amt], group, fromUnit.rate, nil).initMod(fromUnit, toUnit, paramindex);
   }
 
-  *lfo { |name, args, group, rate = \control, bus|
+  *lfo { |name, args, group, rate = \control, bus, type|
     var def;
     if (name.class == ESynthDef) {
       def = name;
     } {
       def = ESynthDef.lfos.at(name);
     }
-    ^this.new(def, args, group, rate, bus);
+    ^this.new(def, args, group, rate, bus, type);
   }
 
-  *osc { |name, args, group, bus|
+  *osc { |name, args, group, bus, type|
     var def;
     if (name.class == ESynthDef) {
       def = name;
     } {
       def = ESynthDef.oscs.at(name);
     }
-    ^this.new(def, args, group, \audio, bus);
+    ^this.new(def, args, group, \audio, bus, type);
   }
 
-  *filt { |name, args, group, bus|
+  *filt { |name, args, group, bus, type|
     var def;
     if (name.class == ESynthDef) {
       def = name;
     } {
       def = ESynthDef.filts.at(name);
     }
-    ^this.new(def, args, group, \audio, bus);
+    ^this.new(def, args, group, \audio, bus, type);
   }
 
-  *amp { |name, args, group, bus|
+  *amp { |name, args, group, bus, type|
     var def;
     if (name.class == ESynthDef) {
       def = name;
     } {
       def = ESynthDef.amps.at(name);
     }
-    ^this.new(def, args, group, \audio, bus);
+    ^this.new(def, args, group, \audio, bus, type);
   }
 
-  *new { |def, args, group, rate = \audio, bus|
+  *new { |def, args, group, rate = \audio, bus, type|
     var addAction = \addToHead;
+    type = type ? 0;
     if (group.isArray) {
       addAction = group[1];
       group = group[0];
     };
     group = group ?? Server.default.defaultGroup;
     if (bus.notNil) { bus = bus.asBus(rate) };
-    ^super.newCopyArgs(def, args.asArray, group, rate, bus).init(addAction);
+    ^super.newCopyArgs(def, args.asArray, group, rate, bus, type, addAction).init;
   }
 
-  init { |addAction, maxmods, offset|
+  init {
     mods = nil ! def.maxMods;
     outputMods = [];
     if (bus.isNil) {
       freebus = true;
       bus = Bus.alloc(rate, group.server, def.numChannels(rate));
     };
+    this.prMakeSynth;
+  }
+
+  prMakeSynth {
+    synth.free;
     synth = Synth(this.defName, args ++ [out: bus], group, addAction);
+    mods.do { |mod, i|
+      if (mod.notNil) {
+        this.prSetMod(i, mod);
+      };
+    };
   }
 
   initMod { |from, to, index|
@@ -91,7 +102,7 @@ ESUnit {
   }
 
   defName {
-    ^if (rate == 'audio') { def.arDefName } { def.krDefName };
+    ^if (rate == 'audio') { def.arDefName(type) } { def.krDefName(type) };
   }
 
   free {
@@ -121,8 +132,15 @@ ESUnit {
     synth.set(\out, bus);
   }
 
-  set { |... args|
-    synth.set(*args);
+  type_ { |value|
+    type = value;
+    //synth.set(\type, value);
+    this.prMakeSynth;
+  }
+
+  set { |... newArgs|
+    synth.set(*newArgs);
+    args = merge(args.asDict, newArgs.asDict, { |old, new| new }).asPairs;
   }
 
   getParamModIndex { |param|
@@ -140,10 +158,13 @@ ESUnit {
     mods[paramindex].free;
     if (mod.notNil) {
       mods[paramindex] = mod;
-      synth.set(def.params[paramindex + def.modOffset].modName, mod.bus.asMap);
+      this.prSetMod(paramindex, mod);
     } {
       this.removeMod(paramindex);
     };
+  }
+  prSetMod { |paramindex, mod|
+    synth.set(def.params[paramindex + def.modOffset].modName, mod.bus.asMap);
   }
 
   removeMod { |param|
