@@ -1,6 +1,6 @@
 BootWindow.show;
 
-ESMPresets.put('FM Clarinet', ~esm.asEvent)
+ESMPresets.put('60s sci fi clicks perc', ~esm.asEvent)
 ESMPresets.put('8bit Sqr fuckedup', ~esm.asEvent)
 ESMPresets.put('Robot voice glottal lead B', ~esm.asEvent)
 ESMPresets.at('Buzzy Brass Pad').lfos
@@ -13,10 +13,10 @@ ESMPresets.all.keys.asArray.sort
   ~esm = ESM.fromEvent(ESMPresets.at(presetName));
   //Window.closeAll;
   if (~window.notNil) { ~window.close };
-  ~window = Window.new("Lines", Rect(0, 200, 880, min(975, Window.screenBounds.height - 25))).background_(Color(0.1, 0, 0.1)).front;
+  ~window = Window.new("Lines", Rect(0, 200, 880, min(1075, Window.screenBounds.height - 25))).background_(Color(0.1, 0, 0.1)).front;
   ~window.acceptsMouseOver = true;
   ~sv = ScrollView(~window, ~window.bounds.resizeBy(0, -30).origin_(0@30)).hasBorder_(false);
-  ~esv = ESView.new(~sv, Rect(0, 0, 880, 990), model: ~esm);
+  ~esv = ESView.new(~sv, Rect(0, 0, 880, 1090), model: ~esm);
   ~presetMenu = PopUpMenu(~window, Rect(610, 5, 260, 20))
   .background_(Color.grey(0.04))
   .stringColor_(Color.white)
@@ -247,6 +247,16 @@ s.stopRecording;
 
 ~es.free
 SynthDescLib.global.at('ESfiltARHouvilainen').def.draw
+
+~es.voices[0].filts[1].synth.getMsg(\out)
+~es.voices[0].stbus.subBus(1)
+~es.voices.do { |voice|
+  voice.filts[0].synth.set(\out, voice.stbus.subBus(0));
+  voice.filts[1].synth.set(\out, voice.stbus.subBus(1));
+}
+
+~esm.putFilt(1, \Houvilainen)
+
 
 ~esm.filts[0].argList
 ~esm.amp.argList

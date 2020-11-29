@@ -113,13 +113,16 @@ ESVoice {
       filtmods[0].set(\amt, 1);
       filtmods[1].set(\amt, 0);
       filtmods[2].set(\amt, 0);
-      filts.do(_.set(\out, monobus));
+      //"Setting outputs to monobus".postln;
+      oddFilts.do(_.bus_(monobus));
+      evenFilts.do(_.bus_(monobus));
     } {
       filtmods[0].set(\amt, 0);
       filtmods[1].set(\amt, 1);
       filtmods[2].set(\amt, 1);
-      oddFilts.do(_.set(\out, stbus.subBus(0)));
-      evenFilts.do(_.set(\out, stbus.subBus(1)));
+      //"Setting outputs to stbus".postln;
+      oddFilts.do(_.bus_(stbus.subBus(0)));
+      evenFilts.do(_.bus_(stbus.subBus(1)));
     };
   }
 
