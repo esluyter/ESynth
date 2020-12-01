@@ -1,11 +1,3 @@
-BootWindow.show;
-
-ESMPresets.put('FM swell 0', ~esm.asEvent)
-ESMPresets.put('8bit Sqr fuckedup', ~esm.asEvent)
-ESMPresets.put('Robot voice glottal lead B', ~esm.asEvent)
-ESMPresets.at('Buzzy Brass Pad').lfos
-ESMPresets.at('Ethereal trumpets').postcs
-ESMPresets.all.keys.asArray.sort
 (
 ~loadES = { |presetName = 'Default'|
   ~esm.free;
@@ -26,7 +18,18 @@ ESMPresets.all.keys.asArray.sort
   .action_({ ~loadES.(~presetMenu.item) });
   ~saveButt = Button(~window, Rect(530, 5, 70, 20))
   .states_([["Save As...", Color.white, Color.grey(0.04)]])
-  .font_(Font.monospace.size_(8));
+  .font_(Font.monospace.size_(8))
+  .action_({
+    var win = Window("Save preset", Rect(~window.bounds.left + 200, ~window.bounds.top + ~window.bounds.height - 250, 480, 200)).background_(Color(0.1, 0, 0.1)).front;
+    var nameField = TextField(win, Rect(50, 75, 380, 30)).font_(Font.monospace.size_(13)).background_(Color.gray(0.2)).stringColor_(Color.white);
+    Button(win, Rect(50, 130, 100, 20)).states_([["Save", Color.white, Color.gray(0.2)]]).font_(Font.monospace.size_(10)).action_({
+      ESMPresets.put(nameField.string.asSymbol, ~esm.asEvent);
+      ~presetMenu.items_(ESMPresets.all.keys.asArray.sort)
+      .value_(ESMPresets.all.keys.asArray.sort.indexOf(nameField.string.asSymbol));
+      win.close;
+    });
+    StaticText(win, Rect(50, 35, 400, 20)).string_("Save preset").font_(Font.monospace.size_(20)).stringColor_(Color.white);
+  });
 
   ~newPatch = { |pc|
     var fromIndex = pc.fromIndex;
@@ -223,7 +226,10 @@ ESMPresets.all.keys.asArray.sort
   };
   ~esinit.(~esm);
 };
-~loadES.();
+
+s.waitForBoot {
+  ~loadES.();
+};
 //s.plotTree;
 
 MIDIClient.init;
@@ -233,52 +239,3 @@ MIDIdef.noteOff(\keyboardOff, { |vel, num| ~es.noteOff(num) });
 MIDIdef.bend(\bend, { |val| ~esm.bend_(val.linlin(0, 16383, -1, 1)) });
 MIDIdef.cc(\mod, { |val| ~esm.mod_(val.linlin(0, 127, 0, 1)) }, 1);
 )
-
-~esm.filts[0].params[7].
-
-
-
-s.record;
-s.stopRecording;
-~es.globals.portamento
-~esm.portamento_(0.1)
-~esm.numVoices_(8)
-~esm.bendRange_(7)
-~esm.asEvent.postcs
-
-
-~es.free
-SynthDescLib.global.at('ESfiltARHouvilainen').def.draw
-
-
-// KEY INDEPENDENT!
-~es.voices.do { |voice| voice.oscs[0].set(\key, 0) }
-ESMPresets.at('Default')
-ESMPresets.at('Crunchy blown').postcs
-2 ? 0
-
-
-~esm.filts[0].argList
-~esm.amp.argList
-~es.voices[0].amp.synth.get(\envType, _.postln)
-~es.voices[0].filts[0].synth.get(\type, _.postln)
-~es.voices[0].filts[0].args
-
-
-(
-ESynthDef.osc(\test,
-  (0..10).collect(_.asSymbol),
-  \duty, \kr,
-  {
-    VarSaw.ar(~note.midicps * (~type + 1), width: ~duty);
-  }
-);
-)
-
-ESynthDef.lfos[\Sin].dump
-
-EZMIDI.keyboard
-
-
-
-{ LFPulse.ar(0, MouseX.kr).poll; DC.ar(0) }.play
