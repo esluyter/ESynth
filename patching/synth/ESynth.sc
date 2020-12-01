@@ -129,7 +129,7 @@ ESynth {
     ESynthDef.lfo(\Vel,
       [\positive, \bipolar],
       {
-        Lag.kr(~vel * 2 - ~type, 0.05);
+        Lag.kr(In.kr(\velbus.ir) * 2 - ~type, 0.05);
       }
     );
 
@@ -153,6 +153,79 @@ ESynth {
       {
         ~freq = (~note + ~tune + ~fine).midicps;
         EVCO.ar(~freq, ~duty, ~slop, ~saw, ~sqr, ~sin, ~tri);
+      }
+    );
+
+    ESynthDef.osc(\PrayerBell,
+      \tune, [\ar, [-48, 48, \lin, 0.0, 0], 1, 12, true],
+      \fine, [\ar, [-2, 2, \lin, 0.0, 0], 0.01, 10, true],
+      \decay, [\kr, [0.01, 2, \exp, 0.0, 1], 0.1],
+      \harmonics, \kr,
+      \mallet, [\kr, \amp.asSpec.copy.default_(0.1)],
+      \sing, \kr,
+      {
+        var t_trig = ~gate, decayscale = ~decay;
+        var sig, input, first, freqscale, mallet, sing;
+        ~freq = (~note + ~tune + ~fine).midicps;
+        freqscale = ~freq / 2434;
+
+        mallet = LPF.ar(Trig.ar(t_trig, SampleDur.ir), 10000 * freqscale) * ~mallet;
+        sing = LPF.ar(
+          LPF.ar(
+            {
+              PinkNoise.ar * Integrator.kr(~gate * 0.001, 0.999).linexp(0, 1, 0.01, 1) * ~sing
+            },
+            2434 * freqscale
+          ) + Dust.ar(0.1), 10000 * freqscale
+        ) * LFNoise1.kr(0.5).range(-45, -30).dbamp;
+        input = mallet + sing;
+
+
+        sig = DynKlank.ar(`[
+          [
+            (first = LFNoise1.kr(0.5).range(2424, 2444)) + Line.kr(20, 0, 0.5),
+            first + LFNoise1.kr(0.5).range(1,3),
+            LFNoise1.kr(1.5).range(5435, 5440) - Line.kr(35, 0, 1),
+            LFNoise1.kr(1.5).range(5480, 5485) - Line.kr(10, 0, 0.5),
+            LFNoise1.kr(2).range(8435, 8445) + Line.kr(15, 0, 0.05),
+            LFNoise1.kr(2).range(8665, 8670),
+            LFNoise1.kr(2).range(8704, 8709),
+            LFNoise1.kr(2).range(8807, 8817),
+            LFNoise1.kr(2).range(9570, 9607),
+            LFNoise1.kr(2).range(10567, 10572) - Line.kr(20, 0, 0.05),
+            LFNoise1.kr(2).range(10627, 10636) + Line.kr(35, 0, 0.05),
+            LFNoise1.kr(2).range(14689, 14697) - Line.kr(10, 0, 0.05)
+          ],
+          [
+            LFNoise1.kr(1).range(-10, -5).dbamp,
+            LFNoise1.kr(1).range(-20, -10).dbamp,
+            LFNoise1.kr(1).range(-12, -6).dbamp,
+            LFNoise1.kr(1).range(-12, -6).dbamp,
+            -20.dbamp,
+            -20.dbamp,
+            -20.dbamp,
+            -25.dbamp,
+            -10.dbamp,
+            -20.dbamp,
+            -20.dbamp,
+            -25.dbamp
+          ],
+          [
+            20 * freqscale.pow(0.2),
+            20 * freqscale.pow(0.2),
+            5,
+            5,
+            0.6,
+            0.5,
+            0.3,
+            0.25,
+            0.4,
+            0.5,
+            0.4,
+            0.6
+          ] * freqscale.reciprocal.pow(0.5)
+        ], input, freqscale, 0, decayscale);
+        sig;
       }
     );
 

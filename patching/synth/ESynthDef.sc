@@ -113,6 +113,7 @@ ESynthDef {
     oscs[name] = this.new(\osc, name, nil, arfunc, typelist, params, {
       ~note = In.kr(\notebus.ir);
       ~vel = In.kr(\velbus.ir);
+      ~gate = In.kr(\gatebus.ir);
     }, false, 8);
     ^oscs[name];
   }

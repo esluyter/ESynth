@@ -77,7 +77,7 @@ ESVoice {
     oscs[index].free;
     oscs[index] = nil;
     if (name.notNil) {
-      args = args ++ [notebus: notebus, velbus: velbus];
+      args = args ++ [notebus: notebus, velbus: velbus, gatebus: gatebus];
       oscs[index] = ESUnit.osc(name, args, oscgroup, oscbus, type: type)
     };
   }
