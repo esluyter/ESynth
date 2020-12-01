@@ -1,7 +1,7 @@
 EVCO : UGen {
-  *ar { |freq = 440, pw = 0.5, slop = 0.01, sawAmt = 0, sqrAmt = 0, sinAmt = 0, triAmt = 0|
+  *ar { |freq = 440, pw = 0.5, slop = 0.01, sawAmt = 0, sqrAmt = 0, sinAmt = 0, triAmt = 0, syncSig = (DC.ar(0))|
     var rate = freq + LFNoise1.ar(LFNoise1.kr(1).range(0.2, 0.3), mul: slop * (freq / 1000));
-    var phase = Phasor.ar(DC.ar(0), rate / SampleRate.ir, 0, 1) * 2pi;
+    var phase = Phasor.ar(syncSig, rate / SampleRate.ir, 0, 1) * 2pi;
     var duty = (pw - 0.5).sign * (pw - 0.5).abs.lincurve(0, 0.5, 0, 0.5, 5);
     var dutyPhase = phase.lincurve(0, 2pi, 0, 2pi, duty.linlin(-0.5, 0.5, -85, 85));
     var k = 12000 * (SampleRate.ir/44100) / (freq * log10(freq));
