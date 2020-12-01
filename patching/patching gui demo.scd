@@ -1,6 +1,6 @@
 BootWindow.show;
 
-ESMPresets.put('60s sci fi clicks perc', ~esm.asEvent)
+ESMPresets.put('FM swell 0', ~esm.asEvent)
 ESMPresets.put('8bit Sqr fuckedup', ~esm.asEvent)
 ESMPresets.put('Robot voice glottal lead B', ~esm.asEvent)
 ESMPresets.at('Buzzy Brass Pad').lfos
@@ -236,6 +236,8 @@ MIDIdef.cc(\mod, { |val| ~esm.mod_(val.linlin(0, 127, 0, 1)) }, 1);
 
 ~esm.filts[0].params[7].
 
+
+
 s.record;
 s.stopRecording;
 ~es.globals.portamento
@@ -248,14 +250,12 @@ s.stopRecording;
 ~es.free
 SynthDescLib.global.at('ESfiltARHouvilainen').def.draw
 
-~es.voices[0].filts[1].synth.getMsg(\out)
-~es.voices[0].stbus.subBus(1)
-~es.voices.do { |voice|
-  voice.filts[0].synth.set(\out, voice.stbus.subBus(0));
-  voice.filts[1].synth.set(\out, voice.stbus.subBus(1));
-}
 
-~esm.putFilt(1, \Houvilainen)
+// KEY INDEPENDENT!
+~es.voices.do { |voice| voice.oscs[0].set(\key, 0) }
+ESMPresets.at('Default')
+ESMPresets.at('Crunchy blown').postcs
+2 ? 0
 
 
 ~esm.filts[0].argList
