@@ -276,3 +276,9 @@ ESynthDef.osc(\test,
 )
 
 ESynthDef.lfos[\Sin].dump
+
+EZMIDI.keyboard
+
+
+
+{ LFPulse.ar(0, MouseX.kr).poll; DC.ar(0) }.play

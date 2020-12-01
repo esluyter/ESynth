@@ -32,13 +32,56 @@ ESynth {
       \delay, [\kr, [0, 10, 4], 0.03],
       \freq, [\ar, [[0.01, 200, 6, 0, 2], [0.1, 10000, 6, 0, 100]], [0.5, 8]],
       \key, \kr,
+      \phase, [\ar, [0, 1]],
       \duty, [\kr, [0, 1, 'linear', 0.0, 0.5]],
       {
         var env = Integrator.kr(ControlDur.ir / ~delay, 1 - (Changed.kr(~gate) * ~gate)).clip(0, 1);
-        LFPulse.kr(~freq, 0, ~duty) * env;
+        var trig = ~gate * ~type;
+        var phase = Select.kr(~type, [Rand(0, 1), DC.kr(0)]) + ~phase;
+        var phasor = (Phasor.kr(trig, ~freq * (((~note - 48) * ~key).midiratio) * 2pi / ControlRate.ir, 0, 2pi) + (phase * 2pi)).wrap(0, 2pi);
+        ((phasor > (~duty * 2pi)) * 2 - 1) * env;
+        //LFPulse.kr(~freq, 0, ~duty) * env;
       }, {
         var env = Integrator.kr(ControlDur.ir / ~delay, 1 - (Changed.kr(~gate) * ~gate)).clip(0, 1);
-        LFPulse.ar(~freq, 0, ~duty) * env;
+        LFPulse.ar(~freq * (((~note - 48) * ~key).midiratio), 0, ~duty) * env;
+      }
+    );
+
+    ESynthDef.lfo(\Saw,
+      [\random, \gate],
+      \delay, [\kr, [0, 10, 4], 0.03],
+      \freq, [\ar, [[0.01, 200, 6, 0, 2], [0.1, 10000, 6, 0, 100]], [0.5, 8]],
+      \key, \kr,
+      \phase, [\ar, [0, 1]],
+      {
+        var env = Integrator.kr(ControlDur.ir / ~delay, 1 - (Changed.kr(~gate) * ~gate)).clip(0, 1);
+        var trig = ~gate * ~type;
+        var phase = Select.kr(~type, [Rand(0, 1), DC.kr(0)]) + ~phase;
+        var phasor = (Phasor.kr(trig, ~freq * (((~note - 48) * ~key).midiratio) * 2pi / ControlRate.ir, 0, 2pi) + (phase * 2pi)).wrap(0, 2pi);
+        (phasor / pi - 1) * env;
+        //LFPulse.kr(~freq, 0, ~duty) * env;
+      }, {
+        var env = Integrator.kr(ControlDur.ir / ~delay, 1 - (Changed.kr(~gate) * ~gate)).clip(0, 1);
+        Saw.ar(~freq * (((~note - 48) * ~key).midiratio)) * env;
+      }
+    );
+
+    ESynthDef.lfo(\Tri,
+      [\random, \gate],
+      \delay, [\kr, [0, 10, 4], 0.03],
+      \freq, [\ar, [[0.01, 200, 6, 0, 2], [0.1, 10000, 6, 0, 100]], [0.5, 8]],
+      \key, \kr,
+      \phase, [\ar, [0, 1]],
+      {
+        var env = Integrator.kr(ControlDur.ir / ~delay, 1 - (Changed.kr(~gate) * ~gate)).clip(0, 1);
+        var trig = ~gate * ~type;
+        var phase = Select.kr(~type, [Rand(0, 1), DC.kr(0)]) + ~phase;
+        var phasor = (Phasor.kr(trig, ~freq * (((~note - 48) * ~key).midiratio) * 2pi / ControlRate.ir, 0, 2pi) + (phase * 2pi)).wrap(0, 2pi);
+        ((phasor * 2 / pi - 2).abs - 1) * env;
+        //LFPulse.kr(~freq, 0, ~duty) * env;
+      }, {
+        var env = Integrator.kr(ControlDur.ir / ~delay, 1 - (Changed.kr(~gate) * ~gate)).clip(0, 1);
+        VarSaw.ar(~freq * (((~note - 48) * ~key).midiratio)) * env;
       }
     );
 
@@ -55,7 +98,6 @@ ESynth {
       }
     );
 
-    // TODO: make this work
     ESynthDef.lfo(\Env,
       [\sustain, \oneshot, \retrig],
       \del, [\kr, [0, 10, 4], 0.03],
@@ -88,6 +130,14 @@ ESynth {
       [\positive, \bipolar],
       {
         Lag.kr(~vel * 2 - ~type, 0.05);
+      }
+    );
+
+    ESynthDef.lfo(\Key,
+      [\positive, \bipolar],
+      {
+        var sig = ~note.linlin(0, 127, 0.0, 2.0);
+        Lag.kr(sig - ~type, 0.05);
       }
     );
 
