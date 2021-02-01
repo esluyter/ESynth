@@ -1,6 +1,6 @@
 ESGlobals {
   var <synthgroup, <group, <notesyn;
-  var <modgroup, <lfogroup;
+  var <modgroup, <routegroup, <lfogroup;
   var <lfos;
   var <note = 60, <bend = 0, <bendRange = 2, <portamento = 0, <notebus, <gatebus, <velbus, <modbus;
   var <noteStack, <notePriorityFunc;
@@ -25,6 +25,7 @@ ESGlobals {
     group = Group(synthgroup, \addToHead);
     notesyn = ESUnit.note(0, group, notebus);
     modgroup = Group(group, \addToTail);
+    routegroup = Group(group, \addToTail);
     lfogroup = Group(group, \addToTail);
   }
 
@@ -36,6 +37,10 @@ ESGlobals {
 
   modulate { |fromUnit, toUnit, param, amt = 0.1|
     ^ESUnit.modUnits(fromUnit, toUnit, param, amt, modgroup);
+  }
+
+  route { |fromUnit, toUnit, index = 0, amt = 1|
+    ^ESUnit.routeUnits(fromUnit, toUnit, index, amt, routegroup);
   }
 
   putLFO { |index, name, rate = 'control', args = (#[]), type|

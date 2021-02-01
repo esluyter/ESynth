@@ -1,10 +1,10 @@
 AmpView : ModuleView {
-  classvar <spacerSpots = #[3, 8], <maxParams = 9;
-  classvar <inletOffset = 3, <arInlets = 2;
+  classvar <spacerSpots = #[3, 8], <maxParams = 12;
+  classvar <inletOffset = 3, <arInlets = 0;
   var envMenu;
 
   prMakeExtraMenus {
-    envMenu = PopUpMenu(view, Rect(110, 7, 66, 12))
+    envMenu = PopUpMenu(view, Rect(110 + leftOffset, 7, 66, 12))
       .background_(Color.grey(0.04))
       .stringColor_(Color.white)
       .font_(Font.monospace.size_(8));

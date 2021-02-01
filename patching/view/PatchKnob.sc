@@ -21,7 +21,7 @@ PatchKnob : SCViewHolder {
           Pen.width = 1;
           Pen.fillStroke;
         } {
-          Pen.fillColor = Color.gray;
+          Pen.fillColor = Color.gray(0.7);
           Pen.fill;
         };
       });
@@ -49,7 +49,7 @@ PatchKnob : SCViewHolder {
   prMouseSetup { |parent|
     var inletPoint = Point(view.bounds.left + 3, view.bounds.top + 2);
     //"prMouseSetup begins".postln;
-    [parent, inletPoint].postln;
+    //[parent, inletPoint].postln;
     /*
     tooltip = StaticText(parent, Rect(inletPoint.x - 15, inletPoint.y - 13, 30, 10).postln);
     "tooltip made".postln;

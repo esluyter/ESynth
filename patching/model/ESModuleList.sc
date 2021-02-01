@@ -29,6 +29,10 @@ ESModuleList : List {
     ^this.collect(_.patchCords).flat;
   }
 
+  arPatchCords {
+    ^this.collect(_.arPatchCords).flat;
+  }
+
   asArray {
     ^this.collect(_.asEvent)
   }

@@ -2,10 +2,6 @@ ESMPatchCord {
   var <fromLFO, <toModule, <toInlet, <params, patchCords, <color, <kind = \patchCord, <index;
   var connection;
 
-  *new { |fromLFO, toModule, toInlet, amt = 0, color|
-    ^super.newCopyArgs(fromLFO, toModule, toInlet).init(amt, color);
-  }
-
   asEvent {
     ^(
       fromIndex: this.fromIndex,
@@ -16,6 +12,10 @@ ESMPatchCord {
       amt: this.amt,
       patchCords: this.patchCords.collect(_.asEvent)
     )
+  }
+
+  *new { |fromLFO, toModule, toInlet, amt = 0, color|
+    ^super.newCopyArgs(fromLFO, toModule, toInlet).init(amt, color);
   }
 
   init { |amt, argcolor|
@@ -46,7 +46,7 @@ ESMPatchCord {
   }
 
   toCategory {
-    ^(this.rootModule.kind ++ \s).asSymbol
+    ^this.rootModule.category
   }
   rootToIndex {
     ^this.rootModule.index

@@ -4,19 +4,18 @@ LFOView : ModuleView {
 
   // narrower menus for LFO view
   prMakeMenus {
-    classMenu = PopUpMenu(view, Rect(4, 7, 64, 12))
+    classMenu = PopUpMenu(view, Rect(4 + leftOffset, 7, 64, 12))
       .background_(Color.grey(0.04))
       .stringColor_(Color.white)
       .font_(Font.monospace.size_(8));
-    typeMenu = PopUpMenu(view, Rect(74, 7, 60, 12))
+    typeMenu = PopUpMenu(view, Rect(74 + leftOffset, 7, 60, 12))
       .background_(Color.grey(0.04))
       .stringColor_(Color.white)
       .font_(Font.monospace.size_(8));
   }
 
   prMakeExtraMenus {
-    // TODO: make this work
-    globalButt = Button(view, Rect(136, 7, 12, 12))
+    globalButt = Button(view, Rect(136 + leftOffset, 7, 12, 12))
       .states_([
         ["L", Color.white, Color.grey(0.04)],
         ["G", Color.black, Color.grey(0.8)]])
@@ -29,7 +28,6 @@ LFOView : ModuleView {
     model.signal(\global).connectTo(globalButt.methodSlot("value_(value.asInt)"));
   }
 
-  // only LFOs can receive drops
   prDropSetup {
     view.canReceiveDragHandler = true;
     view.receiveDragHandler = { |v, x, y|
@@ -37,12 +35,16 @@ LFOView : ModuleView {
         var toModule, inlet;
         # toModule, inlet = View.currentDrag;
         //[model, toModule, inlet].postln;
-        // gaaaah why do we need this only for two mods on inlet 1 of vco 0>>>>??????<<<<<
-        fork {
-          0.1.wait;
-          defer { model.patchTo(toModule, inlet) };
+        if (inlet.notNil) {
+          // gaaaah why do we need this only for two mods on inlet 1 of vco 0>>>>??????<<<<<
+          fork {
+            0.1.wait;
+            defer { model.patchTo(toModule, inlet) };
+          };
+        } {
+          "WARNING: Can't patch an LFO to an audio input".postln;
         };
-      }
+      };
     };
   }
 }

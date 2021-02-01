@@ -150,9 +150,43 @@ ESynth {
       \tri, \kr,
       \saw, \kr,
       \sqr, \kr,
+      \key, [\kr, [-1, 1, \lin, 0, 1], 0.01, 10, true],
+      {
+        ~note = ((~note - 48) * ~key) + 48;
+        ~freq = (~note + ~tune + ~fine).midicps;
+        EVCO.ar(~freq, ~duty, ~slop, ~saw, ~sqr, ~sin, ~tri, ~chain);
+      }
+    );
+
+    ESynthDef.osc(\ChainTest,
+      {
+        ~chain
+      }
+    );
+
+    ESynthDef.osc(\SimplexOsc,
+      \tune, [\ar, [-48, 48, \lin, 0.0, 0], 1, 12, true],
+      \fine, [\ar, [-2, 2, \lin, 0.0, 0], 0.01, 10, true],
+      \freqscale, [\ar, [0, 10, 4, 0.0, 1], 0.1, 1],
+      \oct, [\ar, [1, 5], 1],
+      \offsetX, [\ar, [-48, 48, \lin, 0.0, 0], 0.01, 12, true],
+      \offsetY, [\ar, [-48, 48, \lin, 0.0, 0], 0.01, 12, true],
+      \amp, \kr,
       {
         ~freq = (~note + ~tune + ~fine).midicps;
-        EVCO.ar(~freq, ~duty, ~slop, ~saw, ~sqr, ~sin, ~tri);
+        SimplexSynth.ar(~freq, ~offsetX, ~offsetY, ~freqscale, ~oct) * ~amp;
+      }
+    );
+
+    ESynthDef.osc(\SimplexNoise,
+      \freq, [\ar, [0.001, 1, \exp, 0.0, 0.1]],
+      \radius, [\ar, [1, 10000, \exp, 0.0, 1000], 10],
+      \oct, [\ar, [1, 5], 1],
+      \amp, \kr,
+      \offsetX, [\ar, [-48, 48, \lin, 0.0, 0], 0.01, 12, true],
+      \offsetY, [\ar, [-48, 48, \lin, 0.0, 0], 0.01, 12, true],
+      {
+        SimplexSynth.ar(~freq, ~offsetX, ~offsetY, ~radius, ~oct) * ~amp;
       }
     );
 
@@ -231,7 +265,7 @@ ESynth {
 
     ESynthDef.osc('Operator 4',
       ['ALGO 1', 'ALGO 2', 'ALGO 3', 'ALGO 4', 'ALGO 5', 'ALGO 6', 'ALGO 7', 'ALGO 8'],
-      'feedback', [\kr, [0, 4], 0.05],
+      'ratio 1', [\kr, [1, 20, \exp, 0.0, 0], 0.1],
       'amp 1', [\kr, [0, 20, 6, 0.0, 1], 0.1],
       'ratio 2', [\kr, [1, 20, \exp, 0.0, 0], 0.1],
       'amp 2', [\kr, [0, 20, 6, 0.0, 0], 0.1],
@@ -239,8 +273,11 @@ ESynth {
       'amp 3', [\kr, [0, 20, 6, 0.0, 0], 0.1],
       'ratio 4', [\kr, [1, 20, \exp, 0.0, 0], 0.1],
       'amp 4', [\kr, [0, 20, 6, 0.0, 0], 0.1],
+      \tune, [\ar, [-48, 48, \lin, 0.0, 0], 1, 12, true],
+      \fine, [\ar, [-2, 2, \lin, 0.0, 0], 0.01, 10, true],
+      'fdback', [\kr, [0, 4], 0.05],
       {
-        var feedback = ~feedback;
+        var feedback = ~fdback;
         var chans = [[0], [0], [0], [0], [0, 2], [0, 1, 2], [0, 1, 2], [0, 1, 2, 3]][~type];
         var algo = [
           FM7.modMatrix(
@@ -286,9 +323,9 @@ ESynth {
             [3, 3, feedback]
           ),
         ][~type];
-        ~freq = ~note.midicps;
+        ~freq = (~note + ~tune + ~fine).midicps;
         FM7.ar([
-            [~freq, 0, ~amp_1],
+            [~freq * ~ratio_1, 0, ~amp_1],
             [~freq * ~ratio_2, 0, ~amp_2],
             [~freq * ~ratio_3, 0, ~amp_3],
             [~freq * ~ratio_4, 0, ~amp_4],
@@ -327,8 +364,9 @@ ESynth {
 
     ESynthDef.amp(\VCA,
       \pan, [\ar, [-1, 1, \lin, 0.0, 0], 0.01, 10, true],
+      \gain, \kr,
       {
-        (Pan2.ar(~inmono, ~pan) + Balance2.ar(~instereo[0], ~instereo[1], ~pan)) * ~env * ~key.dbamp;
+        (Pan2.ar(~inmono, ~pan) + Balance2.ar(~instereo[0], ~instereo[1], ~pan)) * (~env * ~key.dbamp + ~gain);
       }
     );
   }
@@ -364,6 +402,63 @@ ESynth {
     ServerTree.remove(treeFunc, server);
   }
 
+  addRoute { |fromUnitFunc, toUnitFunc, index = 0, amt = 1| // index: 0->main, 1->sidechain
+    var fromUnit, toUnit;
+    var globalToUnit = true;
+    try {
+      globalToUnit = toUnitFunc.(voices[0]).isNil;
+    };
+    if (globalToUnit) {
+      fromUnit = fromUnitFunc.(voices[0]);
+      toUnit = toUnitFunc.(globals);
+      globals.route(fromUnit, toUnit, index, amt);
+    } {
+      voices.do { |v|
+        fromUnit = fromUnitFunc.(v);
+        toUnit = toUnitFunc.(v);
+        v.route(fromUnit, toUnit, index, amt);
+      }
+    };
+  }
+
+  freeRoute { |toUnitFunc, index|
+    var globalToUnit = true;
+    try {
+      globalToUnit = toUnitFunc.(voices[0]).isNil;
+    };
+    if (globalToUnit) {
+      var toUnit = toUnitFunc.(globals);
+      if (toUnit.notNil) {
+        toUnit.putRoute(index, nil); // necessary?
+      }
+    } {
+      voices.do({ |v|
+        var toUnit = toUnitFunc.(v);
+        if (toUnit.isKindOf(ESUnit)) {
+          toUnit.putRoute(index, nil);
+        } {
+          toUnit.freeInputRoutes;
+        }
+      });
+    };
+  }
+
+  setRouteAmt { |toUnitFunc, index, amt|
+    var globalToUnit = true;
+    try {
+      globalToUnit = toUnitFunc.(voices[0]).isNil;
+    };
+    if (globalToUnit) {
+      var toUnit = toUnitFunc.(globals);
+      toUnit.routes[index].set(\amt, amt);
+    } {
+      voices.do({ |v|
+        var toUnit = toUnitFunc.(v);
+        toUnit.routes[index].set(\amt, amt);
+      });
+    };
+  }
+
   addMod { |lfoIndex, toUnitFunc, param, amt|
     var fromUnit, toUnit;
     var globalLFO = globals.lfos[lfoIndex].notNil;
@@ -382,10 +477,10 @@ ESynth {
     };
     if (globalLFO and: globalToUnit.not) {
       fromUnit = globals.lfos[lfoIndex];
-      voices.do({ |v|
+      voices.do { |v|
         toUnit = toUnitFunc.(v);
         v.modulate(fromUnit, toUnit, param, amt);
-      });
+      };
     };
     if (globalLFO.not and: globalToUnit) {
       fromUnit = voices[0].lfos[lfoIndex];
@@ -393,11 +488,11 @@ ESynth {
       globals.modulate(fromUnit, toUnit, param, amt);
     };
     if (globalLFO.not and: globalToUnit.not) {
-      voices.do({ |v|
+      voices.do { |v|
         fromUnit = v.lfos[lfoIndex];
         toUnit = toUnitFunc.(v);
         v.modulate(fromUnit, toUnit, param, amt);
-      });
+      };
     }
   }
 
@@ -431,6 +526,10 @@ ESynth {
         toUnit.modAt(param).set(\amt, amt);
       });
     };
+  }
+
+  setNotesyn { |...args|
+    voices.do(_.setNotesyn(*args));
   }
 
   putLFO { |index, name, rate = 'control', args = (#[]), global = false, type|
@@ -546,5 +645,11 @@ ESynth {
   portamento_ { |value|
     globals.portamento_(value);
     voices.do(_.portamento_(value));
+  }
+
+  priority_ { |value|
+    var method = [\lastPriority, \firstPriority, \highestPriority, \lowestPriority][value];
+    globals.perform(method);
+    voices.do(_.perform(method));
   }
 }

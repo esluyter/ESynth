@@ -1,9 +1,10 @@
 ModuleView : SCViewHolder {
-  var curInlet = nil;
+  var curInlet = nil, curArInlet = nil;
   var connections;
   var <classMenu, <typeMenu, <knobs, <boxes, <names, tooltip;
   var <model;
 
+  classvar leftOffset = 5, rightOffset = 5;
   classvar spacer = 10;
   classvar <inletOffset = 0; // override this to offset
   classvar <arInlets = 0; // override to add audio ins
@@ -28,11 +29,11 @@ ModuleView : SCViewHolder {
   }
 
   prMakeMenus {
-    classMenu = PopUpMenu(view, Rect(4, 7, 96, 12))
+    classMenu = PopUpMenu(view, Rect(4 + leftOffset, 7, 96, 12))
       .background_(Color.grey(0.04))
       .stringColor_(Color.white)
       .font_(Font.monospace.size_(8));
-    typeMenu = PopUpMenu(view, Rect(this.bounds.width - 71, 7, 66, 12))
+    typeMenu = PopUpMenu(view, Rect(this.bounds.width - 71 - rightOffset, 7, 66, 12))
       .background_(Color.grey(0.04))
       .stringColor_(Color.white)
       .font_(Font.monospace.size_(8));
@@ -42,12 +43,12 @@ ModuleView : SCViewHolder {
 
   prMakeParams {
     knobs = this.class.maxParams.collect { |i|
-      Knob(view, Rect(4 + this.prOffsetX(i), 22, 25, 25))
+      Knob(view, Rect(4 + leftOffset + this.prOffsetX(i), 22, 25, 25))
         .mode_(\vert)
         .color_([Color.gray(0.8), Color.white, Color.clear, Color.black]);
     };
     boxes = this.class.maxParams.collect { |i|
-      NumberBox(view, Rect(3 + this.prOffsetX(i), 46, 27, 11))
+      NumberBox(view, Rect(3 + leftOffset + this.prOffsetX(i), 46, 27, 11))
         .font_(Font.monospace.size_(8))
         .background_(Color.grey(0.04))
         .stringColor_(Color.white)
@@ -57,7 +58,7 @@ ModuleView : SCViewHolder {
         .maxDecimals_(4);
     };
     names = this.class.maxParams.collect { |i|
-      StaticText(view, Rect(2 + this.prOffsetX(i), 58, 29, 10))
+      StaticText(view, Rect(2 + leftOffset + this.prOffsetX(i), 58, 29, 10))
         .font_(Font.sansSerif.size_(8))
         .align_(\center)
         .stringColor_(Color.white);
@@ -73,6 +74,7 @@ ModuleView : SCViewHolder {
 
     view.mouseOverAction = { |v, x, y|
       curInlet = this.getInletNum(x@y);
+      curArInlet = this.getArInletNum(x@y);
 
       if (curInlet.notNil) {
         var inletPoint = this.getInletPoint(curInlet);
@@ -80,35 +82,45 @@ ModuleView : SCViewHolder {
           .visible_(true)
           .bounds_(Rect(inletPoint.x - 15, inletPoint.y - 13, 30, 10));
       } {
-        tooltip.visible_(false);
+        if (curArInlet.notNil) {
+          var inletPoint = this.getInletPointNoOffset(curArInlet);
+          tooltip.string_(["audio in", ""][curArInlet])
+            .visible_(true)
+            .bounds_(Rect(inletPoint.x - 20, inletPoint.y - 13, 40, 10));
+        } {
+          tooltip.visible_(false);
+        };
       };
       view.refresh;
     };
 
     view.mouseDownAction = { |v, x, y, mod, buttnum, clickcount|
       if (buttnum == 0) {
-        if (curInlet.notNil) { this.beginDrag(x, y) };
+        if (curInlet.notNil or: curArInlet.notNil) { this.beginDrag(x, y) };
       } {
         if (clickcount > 1) {
-          if (curInlet.notNil) { model.patchFrom(nil, curInlet) }
+          if (curInlet.notNil) { model.patchFrom(nil, curInlet) };
+          if (curArInlet.notNil) { model.arPatchFrom(nil, curArInlet) };
         };
       };
     };
 
     view.mouseLeaveAction = {
       curInlet = nil;
+      curArInlet = nil;
       tooltip.visible_(false);
       view.refresh;
     };
     [classMenu, typeMenu].do(_.mouseEnterAction_({
       curInlet = nil;
+      curArInlet = nil;
       tooltip.visible_(false);
       view.refresh;
     }));
 
     view.beginDragAction = {
       //("Dragging from " ++ curInlet).postln;
-      [model, curInlet]
+      [model, curInlet, curArInlet]
     };
   }
 
@@ -177,43 +189,77 @@ ModuleView : SCViewHolder {
   prMakeDrawFunc {
     view.drawFunc = { |v|
       // border
-      Pen.addRoundedRect(Rect(1, 3, v.bounds.width - 2, v.bounds.height - 6), 5, 5);
-      Pen.strokeColor = Color.white;
+      Pen.addRoundedRect(Rect(3, 3, v.bounds.width - 6, v.bounds.height - 6), 5, 5);
       Pen.width = 1;
-      Pen.fillColor = if (model.displayName == "- empty -") { Color(0.1, 0, 0.1, 0.5) } { Color.gray(0.18, 0.9) };
+      if (model.displayName == '-empty-') {
+        Pen.fillColor = Color(0.1, 0, 0.1, 0.5);
+        Pen.strokeColor = Color.gray(0.4);
+      } {
+        Pen.fillColor = Color.gray(0.18, 0.9);
+        Pen.strokeColor = Color.gray(0.7);
+      };
       Pen.fillStroke;
 
       // inlets
       this.class.arInlets.do { |i|
-        Pen.addRoundedRect(Rect(13 + this.prOffsetX(i), 1, 6, 4), 1, 1);
-        Pen.fillColor = Color(0.1, 0, 0.1);
-        Pen.strokeColor = Color.white;
+        Pen.addRoundedRect(Rect(13 + leftOffset + this.prOffsetX(i), 1, 6, 4), 1, 1);
+        if (curArInlet == i) {
+          Pen.fillColor = Color.white;
+        } {
+          Pen.fillColor = Color(0.1, 0, 0.1);
+        };
+        Pen.strokeColor = Color.gray(0.8);
+        if (model.displayName == '-empty-') {
+          Pen.strokeColor = Color.gray(0.5);
+        };
         Pen.width = 1;
         Pen.fillStroke;
       };
+
+      Pen.addRoundedRect(Rect(1, v.bounds.height / 2 - 3, 4, 6), 1, 1);
+      Pen.width = 1;
+      if (curArInlet == 1) {
+        Pen.fillColor = Color.white;
+      } {
+        Pen.fillColor = Color(0.1, 0, 0.1);
+      };
+      Pen.strokeColor = Color.gray(0.8);
+      if (model.displayName == '-empty-') {
+        Pen.strokeColor = Color.gray(0.5);
+      };
+      Pen.fillStroke;
+
       (model.params.size - this.class.inletOffset).do { |i|
-        Pen.addRoundedRect(Rect(13 + this.prOffsetXInlet(i), 1, 6, 4), 1, 1);
+        Pen.addRoundedRect(Rect(13 + leftOffset + this.prOffsetXInlet(i), 1, 6, 4), 1, 1);
         if (curInlet == i) {
           Pen.fillColor = Color.white;
           Pen.strokeColor = Color.white;
           Pen.width = 1;
           Pen.fillStroke;
         } {
-          Pen.fillColor = Color.gray;
+          Pen.fillColor = Color.gray(0.6);
           Pen.fill;
         };
       };
 
       // outlet
-      Pen.addRoundedRect(Rect(13, v.bounds.height - 5, 6, 4), 1, 1);
-      if (model.rate == \kr) {
-        Pen.fillColor = Color.gray;
-        Pen.fill;
-      } {
-        Pen.fillColor = Color(0.1, 0, 0.1);
-        Pen.strokeColor = Color.white;
-        Pen.width = 1;
-        Pen.fillStroke;
+      if (model.kind != \amp) {
+        Pen.addRoundedRect(Rect(13 + leftOffset, v.bounds.height - 5, 6, 4), 1, 1);
+        if (model.kind == \lfo) {
+          Pen.fillColor = Color.gray(0.6);
+          if (model.displayName == '-empty-') {
+            Pen.fillColor = Color.gray(0.3);
+          };
+          Pen.fill;
+        } {
+          Pen.fillColor = Color(0.1, 0, 0.1);
+          Pen.strokeColor = Color.gray(0.8);
+          if (model.displayName == '-empty-') {
+            Pen.strokeColor = Color.gray(0.5);
+          };
+          Pen.width = 1;
+          Pen.fillStroke;
+        };
       };
     };
     view.refresh;
@@ -222,7 +268,20 @@ ModuleView : SCViewHolder {
   getInletNum { |point|
     var inlet;
     (model.params.size - this.class.inletOffset).do { |i|
-      inlet = Point(16 + this.prOffsetXInlet(i), 3);
+      inlet = Point(16 + leftOffset + this.prOffsetXInlet(i), 3);
+      if (((inlet.x - point.x).abs < 5) && ((inlet.y - point.y).abs < 4)) {
+        ^i;
+      };
+    };
+    ^nil;
+  }
+
+  getArInletNum { |point|
+    var inlet;
+    var inletNums = [1];
+    if (this.class.arInlets != 0) { inletNums = [0, 1] };
+    inletNums.do { |i|
+      inlet = this.getArInletPointLocal(i);
       if (((inlet.x - point.x).abs < 5) && ((inlet.y - point.y).abs < 4)) {
         ^i;
       };
@@ -231,14 +290,29 @@ ModuleView : SCViewHolder {
   }
 
   getInletPointNoOffset { |num = 0|
-    ^Point(view.bounds.left + 16 + this.prOffsetX(num), view.bounds.top + 3);
+    ^Point(view.bounds.left + 16 + leftOffset + this.prOffsetX(num), view.bounds.top + 3);
   }
 
   getInletPoint { |num = 0|
-    ^Point(view.bounds.left + 16 + this.prOffsetXInlet(num), view.bounds.top + 3);
+    ^Point(view.bounds.left + 16 + leftOffset + this.prOffsetXInlet(num), view.bounds.top + 3);
+  }
+  getArInletPointLocal { |num = 0|
+    //^this.getInletPointNoOffset(num);
+    var inlet;
+    if (num == 0) {
+      inlet = Point(16 + leftOffset, 3);
+    };
+    // special case -- sidechain inlet
+    if (num == 1) {
+      inlet = Point(3, view.bounds.height / 2);
+    };
+    ^inlet;
+  }
+  getArInletPoint { |num = 0|
+    ^this.getArInletPointLocal(num) + Point(view.bounds.left, view.bounds.top);
   }
 
   getOutletPoint { |num = 0|
-    ^Point(view.bounds.left + 16 + this.prOffsetX(num), view.bounds.top + view.bounds.height - 3);
+    ^Point(view.bounds.left + 16 + leftOffset + this.prOffsetX(num), view.bounds.top + view.bounds.height - 3);
   }
 }

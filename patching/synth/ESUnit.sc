@@ -1,7 +1,11 @@
 ESUnit {
+  classvar <routeIndices = #[\in, \chain];
+
   var <def, <args, <group,
       <rate, // \audio or \control
-      <bus, <type, <addAction, <freebus = false, <synth, <mods, <outputMods, <fromUnit, <toUnit, <paramindex;
+      <bus, <type, <addAction, <freebus = false, <synth,
+      <mods, <routes, <outputMods, <outputRoutes, <fromUnit, <toUnit, <paramindex,
+      <isMod = false, <isRoute = false;
 
   *note { |portamento = 0, group, bus|
     ^this.new(ESynthDef.note, [portamento: 0, note: 60, bend: 0], group, \control, bus);
@@ -19,6 +23,11 @@ ESUnit {
       ^nil;
     };
     ^this.new(ESynthDef.mod, [in: fromUnit.bus, amt: amt], group, fromUnit.rate, nil).initMod(fromUnit, toUnit, paramindex);
+  }
+
+  *routeUnits { |fromUnit, toUnit, index = 0, amt = 1, group|
+    // note: this accepts buses as well as units both to and from
+    ^this.new(ESynthDef.mod, [in: fromUnit.asBus, amt: amt], group, \audio, if (toUnit.isKindOf(Bus)) { toUnit } { nil }).initRoute(fromUnit, toUnit, index);
   }
 
   *lfo { |name, args, group, rate = \control, bus, type|
@@ -51,6 +60,10 @@ ESUnit {
     ^this.new(def, args, group, \audio, bus, type);
   }
 
+  *nilfilt { |group, bus|
+    ^this.new(ESynthDef.nilfilt, nil, group, \audio, bus);
+  }
+
   *amp { |name, args, group, bus, type|
     var def;
     if (name.class == ESynthDef) {
@@ -75,7 +88,9 @@ ESUnit {
 
   init {
     mods = nil ! def.maxMods;
+    routes = nil ! def.maxRoutes;
     outputMods = [];
+    outputRoutes = [];
     if (bus.isNil) {
       freebus = true;
       bus = Bus.alloc(rate, group.server, def.numChannels(rate));
@@ -91,14 +106,33 @@ ESUnit {
         this.prSetMod(i, mod);
       };
     };
+    routes.do { |mod, i|
+      if (mod.notNil) {
+        this.prSetRoute(i, mod);
+      };
+    };
   }
 
   initMod { |from, to, index|
-    fromUnit = from;
+    fromUnit = from; // member variables
     toUnit = to;
     paramindex = index;
+    isMod = true;
     toUnit.putMod(index, this);
     fromUnit.addOutputMod(this);
+  }
+
+  initRoute { |from, to, index|
+    fromUnit = from; // member variables
+    toUnit = to;
+    paramindex = index;
+    isRoute = true;
+    if (toUnit.isKindOf(Bus).not) {
+      toUnit.putRoute(index, this);
+    } {
+      toUnit.addInputRoute(this);
+    };
+    fromUnit.addOutputRoute(this);
   }
 
   defName {
@@ -106,9 +140,17 @@ ESUnit {
   }
 
   free {
-    if ((def.type == \mod) and: (toUnit.notNil)) {
+    if (isMod and: (toUnit.notNil)) {
       toUnit.removeMod(paramindex);
       fromUnit.removeOutputMod(this);
+    };
+    if (isRoute) {
+      if (toUnit.isKindOf(ESUnit)) {
+        toUnit.removeRoute(paramindex);
+      } {
+        toUnit.removeInputRoute(this);
+      };
+      fromUnit.removeOutputRoute(this);
     };
     mods.do(_.free);
     outputMods.do(_.free);
@@ -131,6 +173,8 @@ ESUnit {
     bus = value.asBus(rate);
     synth.set(\out, bus);
   }
+
+  asBus { ^bus }
 
   type_ { |value|
     type = value;
@@ -184,5 +228,32 @@ ESUnit {
 
   removeOutputMod { |mod|
     outputMods.removeAt(outputMods.indexOf(mod));
+  }
+
+  putRoute { |index, mod|
+    routes[index].free;
+    if (mod.notNil) {
+      routes[index] = mod;
+      this.prSetRoute(index, mod);
+    } {
+      this.removeRoute(index);
+    };
+  }
+  prSetRoute { |index, mod|
+    synth.set(ESUnit.routeIndices[index], mod.bus.asMap);
+  }
+
+  removeRoute { |index|
+    // does not free mod
+    routes[index] = nil;
+    synth.set(ESUnit.routeIndices[index], 0);
+  }
+
+  addOutputRoute { |mod|
+    outputRoutes = outputRoutes.add(mod);
+  }
+
+  removeOutputRoute { |mod|
+    outputRoutes.removeAt(outputRoutes.indexOf(mod));
   }
 }

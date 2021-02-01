@@ -1,7 +1,7 @@
 ESView : SCViewHolder {
   var connections;
-  var <model, <patchKnobs, <lfoViews, <oscViews, <filtViews, <ampViews;
-  var <portamentoKnob, <portamentoBox, <bendKnob, <bendBox, <voicesKnob, <voicesBox;
+  var <model, <patchKnobs, <lfos, <oscs, <oscbuses, <filts, <ampbuses, <amps, <notesyns;
+  var <extraControlView, <portamentoKnob, <portamentoBox, <bendKnob, <bendBox, <voicesKnob, <voicesBox, <priorityMenu, <modeMenu, <portamentoMenu;
   var bendSpec, portamentoSpec, voicesSpec;
 
   *new { |parent, bounds, model|
@@ -11,52 +11,61 @@ ESView : SCViewHolder {
   init { |parent, bounds|
     bounds = bounds ?? Rect(0, 0, parent.bounds.width, parent.bounds.height);
     view = UserView(parent, bounds)
-      .background_(Color(0.1, 0, 0.1))
+      .background_(Color(0.1, 0, 0.1, 0.7))
       .onClose_({
         connections.free;
-        [lfoViews, oscViews, filtViews, ampViews].do { |a| a.do(_.remove) };
+        [lfos, oscs, filts, amps].do { |a| a.do(_.remove) };
       });
   }
 
   model_ { |value|
     model = value;
 
-    [lfoViews, oscViews, filtViews, ampViews].do { |a| a.do(_.remove) };
+    [lfos, oscs, filts, amps].do { |a| a.do(_.remove) };
 
-    lfoViews = model.lfos.collect { |lfo, i|
+    lfos = model.lfos.collect { |lfo, i|
       var row = i.div(5);
       var col = i - (row * 5);
       var indent = row % 2 * 20;
-      LFOView(view, Rect(170 * col + indent + 14, 105 * row + 12, 153, 75), lfo);
+      LFOView(view, Rect(180 * col + indent + 14, 105 * row + 12, 163, 75), lfo);
       // 1px extra for line, 3px extra for dots
     };
 
-    oscViews = model.oscs.collect { |osc, i|
-      var row = i.div(3);
-      var col = i - (row * 3);
-      var indent = row % 2 * 20;
-      OscView(view, Rect(270 * col + indent + 14, 105 * row + 442, 253, 75), osc);
-    };
-
-    filtViews = model.filts.collect { |filt, i|
+    oscs = model.oscs.collect { |osc, i|
       var row = i.div(2);
       var col = i - (row * 2);
-      FiltView(view, Rect(370 * col + 14, 105 * row + 667, 353, 75), filt);
+      var indent = row % 2 * 20;
+      OscView(view, Rect(440 * col + indent + 14, 105 * row + 442, 423, 75), osc);
     };
 
-    ampViews = [AmpView(view, Rect(14, 887, 293, 75), model.amps[0])];
+    filts = model.filts.collect { |filt, i|
+      var row = i.div(2);
+      var col = i - (row * 2);
+      var indent = row % 2 * 20;
+      FiltView(view, Rect(440 * col + indent + 14, 105 * row + 802, 423, 75), filt);
+    };
+
+    amps = [AmpView(view, Rect(14, 1032, 423, 75), model.amps[0])];
+
+    oscbuses = [20, 205, 390, 575].collect { |x , i|
+      BusView(view, Rect(x, 753, 20, 28), model.oscbuses[i]).name_((i + 65).asAscii)
+    };
+    ampbuses = [20, 62, 105].collect { |x, i|
+      BusView(view, Rect(x, 1003, 20, 28), model.ampbuses[i]).name_(['L', 'C', 'R'][i]).hasOutlet_(false)
+    };
 
     portamentoSpec = ESynthDef.note.params[0];
     bendSpec = (spec: ControlSpec(0, 24, 4, 0.0, 2), step: 0.1, shift_scale: 10);
     voicesSpec = (spec: ControlSpec(1, 16, 0, 1, 8), step: 1, shift_scale: 4);
 
-    portamentoKnob = Knob(view, Rect(350, 909, 25, 25))
+    extraControlView = View(view, Rect(460, 985, 300, 120));
+    portamentoKnob = Knob(extraControlView, Rect(220, 69, 25, 25))
       .step_(portamentoSpec.step / portamentoSpec.spec.range)
       .shift_scale_(portamentoSpec.shift_scale)
       .value_(portamentoSpec.spec.unmap(model.portamento))
       .mode_(\vert)
       .color_([Color.gray(0.8), Color.white, Color.clear, Color.black]);
-    portamentoBox = NumberBox(view, Rect(349, 933, 27, 11))
+    portamentoBox = NumberBox(extraControlView, Rect(219, 93, 27, 11))
       .step_(portamentoSpec.step)
       .scroll_step_(portamentoSpec.step)
       .shift_scale_(portamentoSpec.shift_scale)
@@ -70,19 +79,19 @@ ESView : SCViewHolder {
       .typingColor_(Color.hsv(0, 0.5, 1))
       .align_(\center)
       .maxDecimals_(4);
-    StaticText(view, Rect(340, 945, 45, 10))
+    StaticText(extraControlView, Rect(210, 105, 45, 10))
       .font_(Font.sansSerif.size_(8))
       .align_(\center)
       .stringColor_(Color.white)
       .string_("portamento");
 
-    bendKnob = Knob(view, Rect(400, 909, 25, 25))
+    bendKnob = Knob(extraControlView, Rect(270, 69, 25, 25))
       .step_(bendSpec.step / bendSpec.spec.range)
       .shift_scale_(bendSpec.shift_scale)
       .value_(bendSpec.spec.unmap(model.bendRange))
       .mode_(\vert)
       .color_([Color.gray(0.8), Color.white, Color.clear, Color.black]);
-    bendBox = NumberBox(view, Rect(399, 933, 27, 11))
+    bendBox = NumberBox(extraControlView, Rect(269, 93, 27, 11))
       .step_(bendSpec.step)
       .scroll_step_(bendSpec.step)
       .shift_scale_(bendSpec.shift_scale)
@@ -96,19 +105,19 @@ ESView : SCViewHolder {
       .typingColor_(Color.hsv(0, 0.5, 1))
       .align_(\center)
       .maxDecimals_(4);
-    StaticText(view, Rect(390, 945, 45, 10))
+    StaticText(extraControlView, Rect(260, 105, 45, 10))
       .font_(Font.sansSerif.size_(8))
       .align_(\center)
       .stringColor_(Color.white)
       .string_("bendRange");
 
-    voicesKnob = Knob(view, Rect(450, 909, 25, 25))
+    voicesKnob = Knob(extraControlView, Rect(30, 69, 25, 25))
       .step_(voicesSpec.step / voicesSpec.spec.range)
       .shift_scale_(voicesSpec.shift_scale)
       .value_(voicesSpec.spec.unmap(model.numVoices))
       .mode_(\vert)
       .color_([Color.gray(0.8), Color.white, Color.clear, Color.black]);
-    voicesBox = NumberBox(view, Rect(449, 933, 27, 11))
+    voicesBox = NumberBox(extraControlView, Rect(29, 93, 27, 11))
       .step_(voicesSpec.step)
       .scroll_step_(voicesSpec.step)
       .shift_scale_(voicesSpec.shift_scale)
@@ -122,17 +131,47 @@ ESView : SCViewHolder {
       .typingColor_(Color.hsv(0, 0.5, 1))
       .align_(\center)
       .maxDecimals_(4);
-    StaticText(view, Rect(440, 945, 45, 10))
+    StaticText(extraControlView, Rect(20, 105, 45, 10))
       .font_(Font.sansSerif.size_(8))
       .align_(\center)
       .stringColor_(Color.white)
       .string_("numVoices");
 
+    portamentoMenu = PopUpMenu(extraControlView, Rect(85, 55, 100, 12))
+      .background_(Color.grey(0.04))
+      .stringColor_(Color.white)
+      .font_(Font.monospace.size_(8))
+      .items_(["Portamento On", "Portamento Auto", "Portamento Off"])
+      .action_({ "not yet implemented".warn });
+
+    modeMenu = PopUpMenu(extraControlView, Rect(85, 79, 100, 12))
+      .background_(Color.grey(0.04))
+      .stringColor_(Color.white)
+      .font_(Font.monospace.size_(8))
+      .items_(["Polyphonic", "Unison Poly", "Unison Mono", "Paraphonic"])
+      .action_({ "not yet implemented".warn });
+
+    priorityMenu = PopUpMenu(extraControlView, Rect(85, 103, 100, 12))
+      .background_(Color.grey(0.04))
+      .stringColor_(Color.white)
+      .font_(Font.monospace.size_(8))
+      .items_(["Latest", "First", "Highest", "Lowest"])
+      .value_(model.priority);
+
+    notesyns = [GlobalModuleView(view, Rect(770, 1032, 103, 75), model.notesyn)];
+
     this.prMakePatches.();
 
     connections.free;
     connections = ConnectionList.make {
+      priorityMenu.signal(\value).connectTo(model.methodSlot("priority_(value)"));
+      model.signal(\priority).connectTo {
+        priorityMenu.value = model.priority;
+      };
+
       model.signal(\patchCords).connectTo(this.methodSlot("prMakePatches"));
+      model.signal(\arPatchCords).connectTo(this.methodSlot("prMakePatches"));
+
       model.signal(\portamento).connectTo {
         portamentoKnob.value = portamentoSpec.spec.unmap(model.portamento);
         portamentoBox.value = model.portamento;
@@ -173,63 +212,59 @@ ESView : SCViewHolder {
     patchKnobs = [];
 
     view.drawFunc = { |v|
-      var plusin = 30@645;
-      var plusout = 30@645;
+      var arPatchCords = model.arPatchCords.values.flat;
+
+      Pen.width = 3.5;
+      arPatchCords.do { |apc|
+        var outletPoint = this.perform(apc.fromCategory)[apc.fromIndex].getOutletPoint;
+        var inletPoint = this.perform(apc.toCategory)[apc.toIndex].getArInletPoint(apc.toInlet);
+        Pen.strokeColor = apc.color;
+        this.prDrawPatchCord(outletPoint, inletPoint, nil, apc.toInlet == 1);
+      };
+      Pen.width = 2.5;
+      Pen.strokeColor = Color(0.1, 0, 0.1);
+      arPatchCords.do { |apc|
+        var outletPoint = this.perform(apc.fromCategory)[apc.fromIndex].getOutletPoint;
+        var inletPoint = this.perform(apc.toCategory)[apc.toIndex].getArInletPoint(apc.toInlet);
+        this.prDrawPatchCord(outletPoint, inletPoint, nil, apc.toInlet == 1);
+      };
 
       Pen.width = 2.5;
+      model.notesyns.patchCords.do { |patchCord|
+        this.prDrawPatchCord(
+          lfos[patchCord.fromIndex].getOutletPoint,
+          notesyns[0].getInletPoint(patchCord.toInlet),
+          patchCord
+        );
+      };
       model.lfos.patchCords.do { |patchCord|
         this.prDrawPatchCord(
-          lfoViews[patchCord.fromIndex].getOutletPoint,
-          lfoViews[patchCord.toIndex].getInletPoint(patchCord.toInlet),
+          lfos[patchCord.fromIndex].getOutletPoint,
+          lfos[patchCord.toIndex].getInletPoint(patchCord.toInlet),
           patchCord
         );
       };
       model.oscs.patchCords.do { |patchCord|
         this.prDrawPatchCord(
-          lfoViews[patchCord.fromIndex].getOutletPoint,
-          oscViews[patchCord.toIndex].getInletPoint(patchCord.toInlet),
+          lfos[patchCord.fromIndex].getOutletPoint,
+          oscs[patchCord.toIndex].getInletPoint(patchCord.toInlet),
           patchCord
         );
       };
       model.filts.patchCords.do { |patchCord|
         this.prDrawPatchCord(
-          lfoViews[patchCord.fromIndex].getOutletPoint,
-          filtViews[patchCord.toIndex].getInletPoint(patchCord.toInlet),
+          lfos[patchCord.fromIndex].getOutletPoint,
+          filts[patchCord.toIndex].getInletPoint(patchCord.toInlet),
           patchCord
         );
       };
       model.amps.patchCords.do { |patchCord|
         this.prDrawPatchCord(
-          lfoViews[patchCord.fromIndex].getOutletPoint,
-          ampViews[patchCord.toIndex].getInletPoint(patchCord.toInlet),
+          lfos[patchCord.fromIndex].getOutletPoint,
+          amps[patchCord.toIndex].getInletPoint(patchCord.toInlet),
           patchCord
         );
       };
-
-      Pen.width = 2;
-      Pen.strokeColor = Color.gray(0.4);
-      oscViews.do { |osc|
-        this.prDrawPatchCord(osc.getOutletPoint(0), plusin);
-      };
-      this.prDrawPatchCord(plusout, filtViews[0].getInletPointNoOffset(0));
-      this.prDrawPatchCord(plusout, filtViews[1].getInletPointNoOffset(0));
-      this.prDrawPatchCord(
-        filtViews[0].getOutletPoint(0),
-        filtViews[2].getInletPointNoOffset(0)
-      );
-      this.prDrawPatchCord(
-        filtViews[1].getOutletPoint(0),
-        filtViews[3].getInletPointNoOffset(0)
-      );
-      this.prDrawPatchCord(
-        filtViews[2].getOutletPoint(0),
-        ampViews[0].getInletPointNoOffset(0)
-      );
-      this.prDrawPatchCord(
-        filtViews[3].getOutletPoint(0),
-        ampViews[0].getInletPointNoOffset(1)
-      );
-      Pen.stroke;
     };
 
     view.refresh;
@@ -237,11 +272,12 @@ ESView : SCViewHolder {
     //"ESView::prMakePatches ends".postln;
   }
 
-  prDrawPatchCord { |p1, p2, patchCord|
-    var offset = Point(0, max(((p2.y - p1.y) / 2), 40));
+  prDrawPatchCord { |p1, p2, patchCord, sidechain = false|
+    var offset = Point(0, max(((p2.y - p1.y) / 2), max((p1.y - p2.y) / 3, if (p2.y < p1.y) { 80 } { 40 })));
+    var sideoffset = Point(max((p2.x - p1.x) / 2, max((p1.x - p2.x) / 4, 40)), 0);
     //"prDrawPatchCord begins".postln;
     Pen.moveTo(p1);
-    Pen.curveTo(p2, p1 + offset, p2 - offset);
+    Pen.curveTo(p2, p1 + offset, if (sidechain) { p2 - sideoffset } { p2 - offset });
     if (patchCord.notNil) {
       Pen.strokeColor = patchCord.color;
     };
@@ -255,9 +291,9 @@ ESView : SCViewHolder {
       );
       //"knob added".postln;
       if (patchCord.patchCords.size > 0) {
-        patchCord.patchCords.postln;
+        //patchCord.patchCords.postln;
         this.prDrawPatchCord(
-          lfoViews[patchCord.patchCords[0].fromIndex].getOutletPoint,
+          lfos[patchCord.patchCords[0].fromIndex].getOutletPoint,
           Point(p2.x - 5, p2.y - 18),
           patchCord.patchCords[0]
         );

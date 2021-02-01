@@ -5,10 +5,36 @@
   ~esm = ESM.fromEvent(ESMPresets.at(presetName));
   //Window.closeAll;
   if (~window.notNil) { ~window.close };
-  ~window = Window.new("Lines", Rect(0, 200, 880, min(1075, Window.screenBounds.height - 25))).background_(Color(0.1, 0, 0.1)).front;
+  ~window = Window.new("Lines", Rect(0, 200, min(1500, Window.screenBounds.width), min(1155, Window.screenBounds.height - 25))).background_(Color(0.1, 0, 0.1)).front;
   ~window.acceptsMouseOver = true;
-  ~sv = ScrollView(~window, ~window.bounds.resizeBy(0, -30).origin_(0@30)).hasBorder_(false);
-  ~esv = ESView.new(~sv, Rect(0, 0, 880, 1090), model: ~esm);
+  ~sv = ScrollView(~window, ~window.bounds.resizeBy(0, -30).origin_(0@30)).hasBorder_(false).background_(Color(0.1, 0, 0.1));
+  UserView(~sv, Rect(0, 0, 1000, 415)).background_(Color.gray(0.2, 0.5)).drawFunc_({ |v|
+    Pen.rotate(-pi/2, 0, 240);
+    Pen.stringAtPoint("LFO", 0@238, Font.sansSerif.boldVariant.size_(44), Color.gray(1, 0.3));
+  });
+  UserView(~sv, Rect(0, 430, 1000, 310)).background_(Color.gray(0.2, 0.5)).drawFunc_({ |v|
+    Pen.rotate(-pi/2, 0, 200);
+    Pen.stringAtPoint("OSC", 0@198, Font.sansSerif.boldVariant.size_(44), Color.gray(1, 0.3));
+  });
+  UserView(~sv, Rect(0, 755, 1000, 235)).background_(Color.gray(0.2, 0.5)).drawFunc_({ |v|
+    Pen.rotate(-pi/2, 0, 165);
+    Pen.stringAtPoint("FILT", 0@163, Font.sansSerif.boldVariant.size_(44), Color.gray(1, 0.3));
+  });
+  UserView(~sv, Rect(0, 1005, 1000, 110)).background_(Color.gray(0.2, 0.5)).drawFunc_({ |v|
+    Pen.rotate(-pi/2, 0, 105);
+    Pen.stringAtPoint("AMP", 0@103, Font.sansSerif.boldVariant.size_(44), Color.gray(1, 0.3));
+  });
+  ~esv = ESView(~sv, Rect(50, 0, 930, 1115), model: ~esm);
+
+  ~kwview = View(~sv, Rect(1000, 765, 495, 350));
+  EZMIDI.keyboard(~kwview);
+  ~window.view.keyDownAction = { |view, char|
+    ~kwview.keyDownAction.(~kwview, char)
+  };
+  ~window.view.keyUpAction = { |view, char|
+    ~kwview.keyUpAction.(~kwview, char)
+  };
+
   ~presetMenu = PopUpMenu(~window, Rect(610, 5, 260, 20))
   .background_(Color.grey(0.04))
   .stringColor_(Color.white)
@@ -60,7 +86,7 @@
     if (module.class == ESM) {
       var what = args[1];
       var val = args[2];
-      [what, val].postln;
+      //[what, val].postln; // <<------
       if (what == \numVoices) {
         ~esinit.(~esm);
       } {
@@ -107,6 +133,9 @@
         // NOT THE BEST SPOT FOR THIS!!
         var name = val.name.asString.replace($ , $_).asSymbol;
         switch (module.kind)
+        {\notesyn} {
+          ~es.setNotesyn(name, val.value)
+        }
         {\lfo} {
           ~es.setLFO(index, name, val.value)
         }
@@ -144,7 +173,7 @@
         };
       }
       {\patchCords} {
-        var toCategory = (module.kind ++ \s).asSymbol;
+        var toCategory = module.category;
         var toIndex = module.index;
         var numInlets = if (module.def.isNil) { 0 } { module.def.params.size - module.def.modOffset };
         numInlets.do { |i| ~es.freeMod({ |v| v.perform(toCategory).at(toIndex) }, i) };
@@ -153,6 +182,19 @@
             ~newPatch.(pc);
             pc = pc.patchCords[0];
           };
+        };
+      }
+      {\arPatchCords} {
+        var toCategory = module.category;
+        var toIndex = module.index;
+        var toInlets = [1];
+        if (toCategory == \filts) { toInlets = [0, 1] };
+        toInlets.do { |i| ~es.freeRoute({ |v| v.perform(toCategory).at(toIndex) }, i) };
+        module.arPatchCords.do { |apc|
+          var fromCategory = apc.fromCategory;
+          var fromIndex = apc.fromIndex;
+          var toInlet = apc.toInlet;
+          ~es.addRoute({ |v| v.perform(fromCategory)[fromIndex] }, { |v| v.perform(toCategory)[toIndex] }, toInlet);
         };
       }
       {\type} {
@@ -206,6 +248,7 @@
     ~es.mod_(~esm.mod);
     ~es.bend_(~esm.bend);
     ~es.bendRange_(~esm.bendRange);
+    ~es.priority_(~esm.priority);
     model.lfos.do { |lfo, i|
       ~es.putLFO(i, lfo.def, lfo.rate, lfo.argList, lfo.global, lfo.type)
     };
@@ -221,6 +264,9 @@
         ~newPatch.(pc);
         pc = pc.patchCords[0];
       };
+    };
+    model.arPatchCords.values.flat.do { |apc|
+      ~es.addRoute({ |v| v.perform(apc.fromCategory)[apc.fromIndex] }, { |v| v.perform(apc.toCategory)[apc.toIndex] }, apc.toInlet);
     };
     ~es.notes = notes;
   };
@@ -239,3 +285,6 @@ MIDIdef.noteOff(\keyboardOff, { |vel, num| ~es.noteOff(num) });
 MIDIdef.bend(\bend, { |val| ~esm.bend_(val.linlin(0, 16383, -1, 1)) });
 MIDIdef.cc(\mod, { |val| ~esm.mod_(val.linlin(0, 127, 0, 1)) }, 1);
 )
+
+s.record
+s.stopRecording

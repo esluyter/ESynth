@@ -1,34 +1,39 @@
 ESM {
-  var <numVoices, <portamento, <bendRange, <mod, <bend;
-  var <lfos, <oscs, <filts, <amps;
+  var <numVoices, <portamento, <bendRange, <mod, <bend, <priority;
+  var <notesyns, <lfos, <oscs, <filts, <amps;
+  var <oscbuses, <ampbuses;
   var connections;
 
-  *new { |numVoices = 8, numLFOs = 20, numOscs = 6, numFilts = 4, portamento = 0, mod = 0, bend = 0, bendRange = 2|
-    ^super.newCopyArgs(numVoices, portamento, bendRange, mod, bend).init(numLFOs, numOscs, numFilts).prDefaultConfig;
+  *new { |numVoices = 8, numLFOs = 20, numOscs = 6, numFilts = 4, portamento = 0, mod = 0, bend = 0, bendRange = 2, priority = 0|
+    ^super.newCopyArgs(numVoices, portamento, bendRange, mod, bend, priority).init(numLFOs, numOscs, numFilts).prDefaultConfig;
   }
 
   init { |numLFOs, numOscs, numFilts|
+    notesyns = ESModuleList(\notesyn, 1);
+    notesyns[0].def_(ESynthDef.note);
     lfos = ESModuleList(\lfo, numLFOs);
     oscs = ESModuleList(\osc, numOscs);
     filts = ESModuleList(\filt, numFilts);
+    oscbuses = ESMBusList(\oscbus, ['A', 'B', 'C', 'D']);
+    ampbuses = ESMBusList(\ampbus, ['L', 'C', 'R'], false);
     amps = ESModuleList(\amp, 1);
     connections = ConnectionList.make {
-      [lfos, oscs, filts, amps].do(_.connectTo({ |changedList ...args|
+      [notesyns, lfos, oscs, filts, amps, oscbuses, ampbuses].do(_.connectTo({ |changedList ...args|
         this.changed(*args)
       }));
     };
   }
 
   prDefaultConfig {
-    oscs[0].def_(\VCO);
-    filts[0].def_(\Houvilainen);
-    amps[0].def_(\VCA);
+    amps[0].def_(\VCA); // not necessary after fixing .fromEvent below
   }
 
   free {
     connections.free;
     [lfos, oscs, filts, amps].do(_.free);
   }
+
+  notesyn { ^notesyns[0] }
 
   putLFO { |index, def, rate = \control, copyParams = false, copyPatchCords = true, global = true|
     // TODO: fix global put in ESynthDef
@@ -69,6 +74,10 @@ ESM {
     bendRange = value;
     this.changed(\bendRange, bendRange, this);
   }
+  priority_ { |value|
+    priority = value;
+    this.changed(\priority, priority, this);
+  }
 
   numLFOs { ^lfos.size }
   numOscs { ^oscs.size }
@@ -78,7 +87,8 @@ ESM {
       lfo: lfos.patchCords,
       osc: oscs.patchCords,
       filt: filts.patchCords,
-      amp: amps.patchCords
+      amp: amps.patchCords,
+      notesyn: notesyns.patchCords
     )
   }
   patchCordsFrom { |index|
@@ -93,6 +103,20 @@ ESM {
     ^patchCords.select({ |pc| pc.fromIndex == index });
   }
 
+  arPatchCords {
+    ^(
+      lfo: lfos.arPatchCords,
+      osc: oscs.arPatchCords,
+      oscbus: oscbuses.arPatchCords,
+      filt: filts.arPatchCords,
+      ampbus: ampbuses.arPatchCords,
+      amp: amps.arPatchCords
+    )
+  }
+  arPatchCordsFrom { |fromCategory, fromIndex|
+    ^this.arPatchCords.values.flat.select({ |pc| pc.fromCategory == fromCategory and: (pc.fromIndex == fromIndex) });
+  }
+
   asEvent {
     ^(
       numVoices: numVoices,
@@ -100,11 +124,14 @@ ESM {
       mod: mod,
       bend: bend,
       bendRange: bendRange,
+      priority: priority,
       lfos: lfos.asArray,
       oscs: oscs.asArray,
       filts: filts.asArray,
       amps: amps.asArray,
-      patchCords: this.patchCords.values.flat.collect(_.asEvent)
+      patchCords: this.patchCords.values.flat.collect(_.asEvent),
+      arPatchCords:
+      this.arPatchCords.values.flat.collect(_.asEvent)
     )
   }
 
@@ -118,7 +145,9 @@ ESM {
     var mod = e.mod;
     var bend = e.bend;
     var bendRange = e.bendRange;
-    var esm = this.new(numVoices, numLFOs, numOscs, numFilts, portamento, mod, bend, bendRange);
+    var priority = e.priority ? 0;
+    var esm = this.new(numVoices, numLFOs, numOscs, numFilts, portamento, mod, bend, bendRange, priority);
+
     e.lfos.do { |lfo, i|
       var def = if (lfo.notNil) { lfo.def } { nil };
       var rate = if (lfo.notNil) { lfo[\rate] } { nil };
@@ -154,6 +183,7 @@ ESM {
       esm.amps[0].envType = amp.envType;
       esm.amps[0].params = amp.params;
     };
+
     handlePC = { |pc|
       var rootModule = esm.perform(pc.toCategory)[pc.rootToIndex];
       if (pc.toDepth == 0) {
@@ -168,6 +198,13 @@ ESM {
       pc.patchCords.do { |pc| handlePC.(pc) };
     };
     e.patchCords.do { |pc| handlePC.(pc) };
+
+    e.arPatchCords.do { |apc|
+      var to = esm.perform(apc.toCategory).at(apc.toIndex);
+      var from = esm.perform(apc.fromCategory).at(apc.fromIndex);
+      to.arPatchFrom(from, apc.toInlet);
+    };
+
     ^esm;
   }
 }

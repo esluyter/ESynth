@@ -2,7 +2,7 @@ ESModule {
   var <kind, <def, <rate;
   var <list, <params;
   var <type, <envType, <global;
-  var patchCords, connections;
+  var patchCords, arPatchCords, connections;
 
   *newList { |list, def, rate = \control|
     ^this.new(list.kind, def, rate).initList(list);
@@ -95,14 +95,21 @@ ESModule {
   }
   prInitPatchCords { |copyPatchCords = false|
     var oldPatchCords = patchCords;
+    var oldArPatchCords = arPatchCords;
     var numPatchCords = min(this.maxMods, (params.size - this.modOffset));
+    var numArPatchCords = 2;
     patchCords = nil.dup(numPatchCords);
+    arPatchCords = nil.dup(numArPatchCords);
     if (copyPatchCords) {
       min(oldPatchCords.size, numPatchCords).do { |i|
         patchCords[i] = oldPatchCords[i];
       };
+      min(oldArPatchCords.size, numArPatchCords).do { |i|
+        arPatchCords[i] = oldArPatchCords[i];
+      };
     };
     this.changed(\patchCords);
+    this.changed(\arPatchCords);
   }
 
   rootModule { ^this }
@@ -181,6 +188,10 @@ ESModule {
     if (kind != \lfo) { ^false };
     module.patchFrom(this, toInlet, amt);
   }
+  arPatchTo { |to, toInlet = 0|
+    if (kind == \lfo or: (kind == \amp)) { ^false };
+    to.arPatchFrom(this, toInlet);
+  }
 
   patchFrom { |fromLFO, toInlet = 0, amt = 0|
     toInlet = this.prGetModIndex(toInlet);
@@ -193,12 +204,30 @@ ESModule {
     };
     this.changed(\patchCords);
   }
+  arPatchFrom { |from, toInlet = 0|
+    if (kind != \filt and: (toInlet == 0)) { ^false };
+    if (toInlet >= arPatchCords.size) { ^false };
+    if (from.isNil) {
+      arPatchCords[toInlet] = nil;
+      ^this.changed(\arPatchCords);
+    };
+    if (from.kind == \lfo or: (from.kind == \amp)) { ^false };
+    arPatchCords[toInlet] = ESMArPatchCord(from, this, toInlet);
+    this.changed(\arPatchCords);
+  }
 
   patchCords {
     ^patchCords.select(_.notNil);
   }
   patchAt { |inlet|
     ^patchCords[this.prGetModIndex(inlet)]
+  }
+
+  arPatchCords {
+    ^arPatchCords.select(_.notNil);
+  }
+  arPatchAt { |inlet|
+    ^arPatchCords[inlet];
   }
 
   prGetModIndex { |param|
@@ -240,7 +269,7 @@ ESModule {
   }
 
   printOn { | stream |
-    stream << "ESModule<" << if (def.notNil) { def.name } { "nil" } << ">";
+    stream << "ESModule<" << kind << this.index << "-" << if (def.notNil) { def.name } { "nil" } << ">";
   }
 
   asEvent {
@@ -253,5 +282,14 @@ ESModule {
       envType: envType,
       global: global
     )
+  }
+
+  category {
+    var plural = if (kind.asString.last == $s) {
+      \es
+    } {
+      \s
+    };
+    ^(kind ++ plural).asSymbol
   }
 }

@@ -1,13 +1,20 @@
 ESynthDef {
-  classvar <mod, <note, <lfos, <oscs, <filts, <amps;
-  var <type, <name, <krfunc, <arfunc, <typelist, <params, <envirFunc, <autoEnv, <maxMods, <modOffset;
+  classvar <mod, <note, <nilfilt, <lfos, <oscs, <filts, <amps;
+  var <type, <name, <krfunc, <arfunc, <typelist, <params, <envirFunc, <autoEnv, <maxMods, <modOffset, <maxRoutes = 2;
 
   *initClass {
     Class.initClassTree(ServerBoot);
     Class.initClassTree(SynthDescLib);
     Class.initClassTree(ControlSpec);
     mod = this.new(\mod, \mod, { In.kr(\in.ir) * ~amt }, { InFeedback.ar(\in.ir) * ~amt }, nil, [ESParam(\amt, \control, [-1, 1, \lin, 0.0, 0], centered: true)], maxMods: 1);
-    note = this.new(\note, \note, { ~note.lag2(~portamento) + (~bend.lag(0.05) * \bendRange.kr(2)) }, nil, nil, [ESParam(\portamento, \control, [0, 20, 8, 0.0, 0.001], 0.1), ESParam(\note, \control, [0, 127]), ESParam(\bend, \control, [-12, 12])], maxMods: 0);
+    note = this.new(\notesyn, \note, { ~note.lag2(~portamento) + ~tune + ~fine + (~bend.lag(0.05) * \bendRange.kr(2)) }, nil, nil, [
+      ESParam(\portamento, \control, [0, 20, 8, 0.0, 0.001], 0.1),
+      ESParam(\note, \control, [0, 127]),
+      ESParam(\bend, \control, [-12, 12]),
+      ESParam(\tune, \control, [-48, 48, \lin, 0.0, 0], 1, 12, true),
+      ESParam(\fine, \control, [-2, 2, \lin, 0.0, 0], 0.01, 10, true)
+    ], maxMods: 2, modOffset: 3);
+    nilfilt = this.new(\filt, \nilfilt, nil, { \in.ar }, maxMods: 2, maxRoutes: 2);
     lfos = ();
     oscs = ();
     filts = ();
@@ -31,7 +38,8 @@ ESynthDef {
         SynthDef(this.arDefName(type_i), {
           var out = \out.kr;
           var sig = this.prMakeParamEnvir(type_i).use(arfunc);
-          if (type == \filt) { ReplaceOut.ar(out, sig) } { Out.ar(out, sig) };
+          //if (type == \filt) { ReplaceOut.ar(out, sig) } { Out.ar(out, sig) };
+          Out.ar(out, sig);
         }).add;
       };
       if (krfunc.notNil) {
@@ -87,9 +95,9 @@ ESynthDef {
     ^e;
   }
 
-  *new { |type, name, krfunc, arfunc, typelist, params, envirFunc, autoEnv = false, maxMods = 8, modOffset = 0|
+  *new { |type, name, krfunc, arfunc, typelist, params, envirFunc, autoEnv = false, maxMods = 8, modOffset = 0, maxRoutes = 2|
     envirFunc = envirFunc ? {};
-    ^super.newCopyArgs(type, name, krfunc, arfunc, typelist, params, envirFunc, autoEnv, maxMods, modOffset).init;
+    ^super.newCopyArgs(type, name, krfunc, arfunc, typelist, params, envirFunc, autoEnv, maxMods, modOffset, maxRoutes).init;
   }
 
   init {
@@ -103,6 +111,7 @@ ESynthDef {
       ~note = In.kr(\notebus.ir);
       ~gate = In.kr(\gatebus.ir);
       //~mod = In.kr(\modbus.ir);
+      ~chain = \chain.ar;
     }, false, 5);
     ^lfos[name];
   }
@@ -111,10 +120,12 @@ ESynthDef {
     var typelist, params, arfunc;
     # typelist, params, arfunc = this.prParseConstructorArgs(args);
     oscs[name] = this.new(\osc, name, nil, arfunc, typelist, params, {
+      ~in = \in.ar;
       ~note = In.kr(\notebus.ir);
       ~vel = In.kr(\velbus.ir);
       ~gate = In.kr(\gatebus.ir);
-    }, false, 8);
+      ~chain = \chain.ar;
+    }, false, 12);
     ^oscs[name];
   }
 
@@ -122,9 +133,11 @@ ESynthDef {
     var typelist, params, arfunc;
     # typelist, params, arfunc = this.prParseConstructorArgs(args, true);
     filts[name] = this.new(\filt, name, nil, arfunc, typelist, params, {
-      ~in = In.ar(\out.kr);
+      //~in = In.ar(\out.kr);
+      ~in = \in.ar;
+      ~chain = \chain.ar;
       ~gate = In.kr(\gatebus.ir);
-    }, true, 8, 3);
+    }, true, 9, 3, 2);
     ^filts[name];
   }
 
@@ -133,9 +146,10 @@ ESynthDef {
     # typelist, params, arfunc = this.prParseConstructorArgs(args, true, 1);
     amps[name] = this.new(\amp, name, nil, arfunc, typelist, params, {
       ~inmono = In.ar(\inmono.ir);
-      ~instereo = In.ar(\instereo.ir, 2);
+      ~instereo = [In.ar(\inleft.ir), In.ar(\inright.ir)];
       ~gate = In.kr(\gatebus.ir);
-    }, true, 6, 3);
+      ~chain = \chain.ar;
+    }, true, 9, 3);
     ^amps[name];
   }
 

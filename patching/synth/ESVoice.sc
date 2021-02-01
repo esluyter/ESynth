@@ -1,10 +1,12 @@
 ESVoice {
   var <synthgroup, <group, <notesyn;
-  var <modgroup, <lfogroup, <oscgroup, <filtgroups;
+  var <modgroup, <routegroup, <busingroup, <busoutgroup, <lfogroup, <oscgroup, <filtgroups;
   var <lfos, <oscs, <filtmods, <filts, <amp;
-  var <oscbus, <stbus, <monobus;
+  var <oscbuses, <ampbuses;
   var <note = 60, <bendRange = 2, <bend = 0, <portamento = 0, <notebus, <gatebus, <velbus, <modbus;
   var <noteStack, <notePriorityFunc;
+
+  // todo: do we still need multiple filtgroups?
 
 
   *new { |synthgroup, numlfos = 20, numoscs = 6, numfilts = 4|
@@ -21,9 +23,8 @@ ESVoice {
     this.gate_(0);
     this.vel_(100);
     this.mod_(0);
-    oscbus = Bus.audio(synthgroup.server);
-    stbus = Bus.audio(synthgroup.server, 2);
-    monobus = Bus.audio(synthgroup.server, 1);
+    oscbuses = { ESBus.audio(synthgroup.server) } ! 4;
+    ampbuses = { ESBus.audio(synthgroup.server) } ! 3;
     this.prMakeGroups(numfilts);
     this.lastPriority;
   }
@@ -32,19 +33,17 @@ ESVoice {
     group = Group(synthgroup, \addToTail);
     notesyn = ESUnit.note(0, group, notebus);
     modgroup = Group(group, \addToTail);
+    routegroup = Group(group, \addToTail);
+    busingroup = Group(routegroup, \addToHead);
+    busoutgroup = Group(routegroup, \addToTail);
     lfogroup = Group(group, \addToTail);
     oscgroup = Group(group, \addToTail);
-    filtmods = [
-      ESUnit.mod(oscbus, 1, [group, \addToTail], monobus),
-      ESUnit.mod(oscbus, 0, [group, \addToTail], stbus.subBus(0)),
-      ESUnit.mod(oscbus, 0, [group, \addToTail], stbus.subBus(1))
-    ];
     filtgroups = { Group(group, \addToTail) }.dup(numfilts/2);
     this.putAmp(\VCA);
   }
 
   free {
-    [monobus, stbus, oscbus, velbus, gatebus, notebus, modbus].do(_.free);
+    ([velbus, gatebus, notebus, modbus] ++ oscbuses ++ ampbuses).do(_.free);
     amp.free;
     filtmods.do(_.free);
     lfos.do(_.free);
@@ -57,6 +56,13 @@ ESVoice {
     ^ESUnit.modUnits(fromUnit, toUnit, param, amt, modgroup);
   }
 
+  route { |fromUnit, toUnit, index = 0, amt = 1|
+    var grp = routegroup;
+    if (toUnit.isKindOf(Bus)) { grp = busingroup };
+    if (fromUnit.isKindOf(Bus)) { grp = busoutgroup };
+    ^ESUnit.routeUnits(fromUnit, toUnit, index, amt, grp);
+  }
+
   putLFO { |index, name, rate = 'control', args = (#[]), type|
     lfos[index].free;
     lfos[index] = nil;
@@ -64,6 +70,10 @@ ESVoice {
       args = args ++ [notebus: notebus, velbus: velbus, gatebus: gatebus, modbus: modbus];
       lfos[index] = ESUnit.lfo(name, args, lfogroup, rate, type: type);
     };
+  }
+
+  setNotesyn { |...args|
+    notesyn.set(*args);
   }
 
   setLFO { |index ...args|
@@ -75,10 +85,11 @@ ESVoice {
 
   putOsc { |index, name, args = (#[]), type|
     oscs[index].free;
-    oscs[index] = nil;
     if (name.notNil) {
       args = args ++ [notebus: notebus, velbus: velbus, gatebus: gatebus];
-      oscs[index] = ESUnit.osc(name, args, oscgroup, oscbus, type: type)
+      oscs[index] = ESUnit.osc(name, args, oscgroup, type: type)
+    } {
+      oscs[index] = ESUnit.nilfilt(oscgroup);
     };
   }
 
@@ -91,38 +102,11 @@ ESVoice {
 
   putFilt { |index, name, args = (#[]), type|
     filts[index].free;
-    filts[index] = nil;
     if (name.notNil) {
       args = args ++ [notebus: notebus, velbus: velbus, gatebus: gatebus];
-      filts[index] = ESUnit.filt(name, args, filtgroups[(index / 2).floor], monobus, type: type);
-    };
-    this.prCheckFilts;
-  }
-
-  prCheckFilts {
-    var oddFilts = [], evenFilts = [];
-    filts.pairsDo { |a, b|
-      if (a.notNil) {
-        oddFilts = oddFilts.add(a);
-      };
-      if (b.notNil) {
-        evenFilts = evenFilts.add(b);
-      };
-    };
-    if ((oddFilts.size == 0) or: (evenFilts.size == 0)) {
-      filtmods[0].set(\amt, 1);
-      filtmods[1].set(\amt, 0);
-      filtmods[2].set(\amt, 0);
-      //"Setting outputs to monobus".postln;
-      oddFilts.do(_.bus_(monobus));
-      evenFilts.do(_.bus_(monobus));
+      filts[index] = ESUnit.filt(name, args, filtgroups[(index / 2).floor], type: type);
     } {
-      filtmods[0].set(\amt, 0);
-      filtmods[1].set(\amt, 1);
-      filtmods[2].set(\amt, 1);
-      //"Setting outputs to stbus".postln;
-      oddFilts.do(_.bus_(stbus.subBus(0)));
-      evenFilts.do(_.bus_(stbus.subBus(1)));
+      filts[index] = ESUnit.nilfilt(filtgroups[(index / 2).floor]); // todo: necessary??
     };
   }
 
@@ -137,7 +121,7 @@ ESVoice {
     amp.free;
     amp = nil;
     if (name.notNil) {
-      args = args ++ [inmono: monobus, instereo: stbus, notebus: notebus, velbus: velbus, gatebus: gatebus];
+      args = args ++ [inleft: ampbuses[0], inmono: ampbuses[1], inright: ampbuses[2], notebus: notebus, velbus: velbus, gatebus: gatebus];
       amp = ESUnit.amp(name, args, [group, \addToTail], 0, type: type);
     };
   }
@@ -160,6 +144,8 @@ ESVoice {
     bend = value;
     notesyn.set(\bend, value);
   }
+
+  notesyns { ^[notesyn] }
 
   note_ { |value|
     note = value;
@@ -188,6 +174,10 @@ ESVoice {
   mod_ { |value|
     modbus.set(value);
   }
+
+  monobus { ^ampbuses[1] }
+  leftbus { ^ampbuses[0] }
+  rightbus { ^ampbuses[2] }
 
   firstPriority {
     notePriorityFunc = { |stack| stack.first };
