@@ -249,6 +249,8 @@
     ~es.bend_(~esm.bend);
     ~es.bendRange_(~esm.bendRange);
     ~es.priority_(~esm.priority);
+    ~es.setNotesyn(\tune, ~esm.notesyn.tune);
+    ~es.setNotesyn(\fine, ~esm.notesyn.fine);
     model.lfos.do { |lfo, i|
       ~es.putLFO(i, lfo.def, lfo.rate, lfo.argList, lfo.global, lfo.type)
     };

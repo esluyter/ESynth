@@ -125,6 +125,7 @@ ESM {
       bend: bend,
       bendRange: bendRange,
       priority: priority,
+      notesyns: notesyns.asArray,
       lfos: lfos.asArray,
       oscs: oscs.asArray,
       filts: filts.asArray,
@@ -147,6 +148,11 @@ ESM {
     var bendRange = e.bendRange;
     var priority = e.priority ? 0;
     var esm = this.new(numVoices, numLFOs, numOscs, numFilts, portamento, mod, bend, bendRange, priority);
+
+    if (e.notesyns.notNil) {
+      var notesyn = e.notesyns[0];
+      esm.notesyn.params = notesyn.params;
+    };
 
     e.lfos.do { |lfo, i|
       var def = if (lfo.notNil) { lfo.def } { nil };
