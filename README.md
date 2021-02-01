@@ -9,4 +9,4 @@ Requirements:
 - Houvilainen filter (https://github.com/esluyter/houvilainenfilter)
 - Simplexsynth (https://github.com/esluyter/simplexsynth)
 
-![screenshot](img/esynth 2.png)
+![screenshot]("img/esynth 2.png")
