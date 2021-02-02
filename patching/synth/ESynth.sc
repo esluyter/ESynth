@@ -141,6 +141,39 @@ ESynth {
       }
     );
 
+    ESynthDef.lfo(\Mult,
+      \in1, [\ar, [-1, 1, \lin, 0.0, 0], 0.01, 10, true],
+      \in2, [\ar, [-1, 1, \lin, 0.0, 0], 0.01, 10, true],
+      {
+        ~in1 * ~in2
+      },
+      {
+        ~in1 * ~in2
+      }
+    );
+
+    ESynthDef.lfo(\Add,
+      \in1, [\ar, [-1, 1, \lin, 0.0, 0], 0.01, 10, true],
+      \in2, [\ar, [-1, 1, \lin, 0.0, 0], 0.01, 10, true],
+      {
+        ~in1 + ~in2
+      },
+      {
+        ~in1 + ~in2
+      }
+    );
+
+    ESynthDef.lfo(\Sub,
+      \in1, [\ar, [-1, 1, \lin, 0.0, 0], 0.01, 10, true],
+      \in2, [\ar, [-1, 1, \lin, 0.0, 0], 0.01, 10, true],
+      {
+        ~in1 - ~in2
+      },
+      {
+        ~in1 - ~in2
+      }
+    );
+
     ESynthDef.osc(\VCO,
       \tune, [\ar, [-48, 48, \lin, 0.0, 0], 1, 12, true],
       \fine, [\ar, [-2, 2, \lin, 0.0, 0], 0.01, 10, true],
@@ -155,12 +188,6 @@ ESynth {
         ~note = ((~note - 48) * ~key) + 48;
         ~freq = (~note + ~tune + ~fine).midicps;
         EVCO.ar(~freq, ~duty, ~slop, ~saw, ~sqr, ~sin, ~tri, ~chain);
-      }
-    );
-
-    ESynthDef.osc(\ChainTest,
-      {
-        ~chain
       }
     );
 
