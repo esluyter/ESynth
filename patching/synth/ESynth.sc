@@ -191,6 +191,46 @@ ESynth {
       }
     );
 
+    /*ESynthDef.osc(\SuperSaw,
+      \tune, [\ar, [-48, 48, \lin, 0.0, 0], 1, 12, true],
+      \fine, [\ar, [-2, 2, \lin, 0.0, 0], 0.01, 10, true],
+      \duty, [\kr, [0, 1, \lin, 0.0, 0.5], 0.01, 10, true],
+      \detune, [\kr, [0.1, 10, \exp, 0.0, 1.0]],
+      {
+        ~freq = (~note + ~tune + ~fine).midicps;
+        ESuperSaw.ar(~freq, ~duty, ~detune);
+      }
+    );*/
+    ESynthDef.osc(\SuperSaw,
+      \tune, [\ar, [-48, 48, \lin, 0.0, 0], 1, 12, true],
+      \fine, [\ar, [-2, 2, \lin, 0.0, 0], 0.01, 10, true],
+      \n, [\kr, [0, 12, \lin, 0.0, 6], 1, 10, true],
+      \detune, [\kr, [0.01, 10, \exp, 0.0, 0.2], 0.1],
+      \vari, [\kr, [0.01, 10, \exp, 0.0, 0.01], 0.1],
+      \varHz, [\kr, [0.01, 10, \exp, 0.0, 0.2], 0.1],
+      \side, [\kr,  \amp.asSpec.copy.default_(0.5)],
+      \sideAtt, [\kr, [-32, 32, \lin, 0.0, 0.0], 0.1, 1, true],
+      {
+        var maxsize = 25;
+        var midpoint = (maxsize + 1) / 2;
+        var note = ~note + ~tune + ~fine;
+        var primes = [-1.91, -1.51, -1.39, -1.27, -1.09, -0.83, -0.67, -0.47, -0.37, -0.29, -0.17, -0.07, 0.0, 0.05, 0.13, 0.23, 0.31, 0.43, 0.61, 0.79, 1.07, 1.13, 1.37, 1.49, 1.81];
+
+        var n = ~n;
+        var detune = (~detune * BinaryOpUGen('!=', n, 0)) * pow(2, (midpoint - n).dbamp) * 0.5;
+        var variation = ~vari;
+        var varSpeed = ~varHz;
+        var sideAmt = ~side;
+        var sideSlope = ~sideAtt / (n + 1);
+
+        var nOffset = (maxsize - 1) * 0.5 - n;
+        var amps = maxsize.collect { |i| (i >= nOffset) * (i < (maxsize - nOffset)) * ((BinaryOpUGen('==', i, midpoint) * 0.7) + (BinaryOpUGen('!=', i, midpoint) * sideAmt * ((i - midpoint).abs * sideSlope).dbamp)) };
+        var freqs = maxsize.collect({ |i| (note + (primes[i] * detune) + (BinaryOpUGen('!=', i, midpoint) * LFDNoise3.kr(varSpeed) * variation)).midicps });
+        var saws = Saw.ar(freqs);
+        Normalizer.ar((saws * amps).sum, 0.1, 0.01)
+      }
+    );
+
     ESynthDef.osc(\SimplexOsc,
       \tune, [\ar, [-48, 48, \lin, 0.0, 0], 1, 12, true],
       \fine, [\ar, [-2, 2, \lin, 0.0, 0], 0.01, 10, true],

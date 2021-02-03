@@ -55,7 +55,7 @@ SynthDef(\supersaw_poc, { |out, gate = 1, freq = 440, amp = 0.1, pan = 0, cutoff
 }).add;
 )
 
-{ ESuperSaw.ar(MouseX.kr(100, 5000,\exponential), MouseY.kr) ! 2 }.play
+{ ESuperSaw.ar(MouseX.kr(100, 5000,\exponential), MouseY.kr(0, 1)) ! 2 }.play
 
 x = Synth(\supersaw_poc)
 x.free
@@ -104,3 +104,43 @@ var output = (exp (x) - exp (-1 * x * a)) / (exp (x) + exp (-1 * x));
 output
 }.scope
 )
+
+
+
+(i < (n * 2 + 1)) * ((BinaryOpUGen('==', i, n) * 0.7) + (BinaryOpUGen('!=', i, n) * sideAmt))
+
+(
+{
+  var maxsize = 25;
+  var midpoint = (maxsize + 1) / 2;
+  var note = MouseX.kr(10, 100);
+  var primes = [-1.91, -1.51, -1.39, -1.27, -1.09, -0.83, -0.67, -0.47, -0.37, -0.29, -0.17, -0.07, 0.0, 0.05, 0.13, 0.23, 0.31, 0.43, 0.61, 0.79, 1.07, 1.13, 1.37, 1.49, 1.81];//[-1.91, -1.39, -1.09, -0.67, -0.37, -0.17, 0.0, 0.13, 0.31, 0.61, 1.07, 1.37, 1.81];
+
+  var n = \n.kr(12);
+  var detune = (MouseY.kr(0.01, 10, \exponential) * BinaryOpUGen('!=', n, 0)) * pow(2, (midpoint - n).dbamp).poll * 0.5;
+  var variation = 0.01; // 0.01 - 10.0
+  var varSpeed = 0.1; // 0.01 - 10.0
+  var sideAmt = 0.7;
+  var sideSlope = -2;
+
+  var nOffset = (maxsize - 1) * 0.5 - n;
+  var amps = maxsize.collect { |i| (i >= nOffset) * (i < (maxsize - nOffset)) * ((BinaryOpUGen('==', i, midpoint) * 0.7) + (BinaryOpUGen('!=', i, midpoint) * sideAmt * ((i - midpoint).abs * sideSlope).dbamp)) };
+  var freqs = maxsize.collect({ |i| (note + (primes[i] * detune) + (LFDNoise3.kr(varSpeed) * variation)).midicps });
+  var saws = Saw.ar(freqs);
+  Normalizer.ar((saws * amps).sum, 0.1, 0.01) ! 2;
+}.play
+)
+
+
+
+0 -> 1
+6 -> 2
+9 -> 4
+
+pow(2, 9.dbamp) * 0.5
+
+
+
+
+
+[-1.91, -1.51, -1.39, -1.27, -1.09, -0.83, -0.67, -0.47, -0.37, -0.29, -0.17, -0.07, 0.0, 0.05, 0.13, 0.23, 0.31, 0.43, 0.61, 0.79, 1.07, 1.13, 1.37, 1.49, 1.81][9]

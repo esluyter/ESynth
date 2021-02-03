@@ -26,11 +26,11 @@ EVCO : UGen {
 ESuperSaw : UGen {
   classvar max = 30;
 
-  *ar { |freq = 440, duty = 0.5|
+  *ar { |freq = 440, duty = 0.5, detune = 1|
     var freqs, amps, sig, n, d;
     duty = duty * 2;
     n = duty.linexp(0, 1.5, 0.1, max);
-    d = duty.lincurve(0.2, 1.5, 0.005, 0.02, 2, nil);
+    d = duty.lincurve(0.2, 1.5, 0.005, 0.02, 2, nil) * detune;
     n = n.clip(0, max);
     freqs = freq * (max + 1).collect({ |i| LFNoise1.kr(0.001).range(1 - d, 1 + d) });
     amps = (max + 1).collect({ |i| (n - i + 1).clip(0, 1) });
