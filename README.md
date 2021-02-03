@@ -5,6 +5,7 @@ Work in progress semi-modular SuperCollider synth with patching interface that w
 Aiming for a framework that supports experimenting with / easily adding new modules.
 
 Requirements:
+- SC3 plugins
 - Connection quark
 - Houvilainen filter (https://github.com/esluyter/houvilainenfilter)
 - Simplexsynth (https://github.com/esluyter/simplexsynth)
