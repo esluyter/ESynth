@@ -10,13 +10,12 @@ ESynth {
     File(PathName(ESynth.filenameSymbol.asString).pathOnly +/+ "esynthdefs.scd", "r").readAllString.interpret;
   }
 
-  *new { |server, model, numVoices = 1|
-    ^super.new.init(server, model, numVoices);
+  *new { |server, numVoices = 1|
+    ^super.new.init(server, numVoices);
   }
 
-  init { |argserver, argmodel, nVoices = 1|
+  init { |argserver, nVoices = 1|
     server = argserver ?? Server.default;
-    model = argmodel;
     numVoices = nVoices;
 
     treeFunc = {
@@ -29,7 +28,6 @@ ESynth {
       group = Group(server);
       voices = { ESVoice(group) } ! numVoices;
       globals = ESGlobals(group);
-      // parse model..... :/
     };
     treeFunc.();
     ServerTree.add(treeFunc, server);
