@@ -1,32 +1,23 @@
 (
 ~loadES = { |presetName = 'Default'|
-  ~esm.free;
-  //~esm = ESM();
-  ~esm = ESM.fromEvent(ESMPresets.at(presetName));
-  //Window.closeAll;
-  if (~window.notNil) { ~window.close };
-  ~window = Window.new("Lines", Rect(0, 200, min(1500, Window.screenBounds.width), min(1155, Window.screenBounds.height - 25))).background_(Color(0.1, 0, 0.1)).front;
-  ~window.acceptsMouseOver = true;
-  ~sv = ScrollView(~window, ~window.bounds.resizeBy(0, -30).origin_(0@30)).hasBorder_(false).background_(Color(0.1, 0, 0.1));
-  UserView(~sv, Rect(0, 0, 1000, 415)).background_(Color.gray(0.2, 0.5)).drawFunc_({ |v|
-    Pen.rotate(-pi/2, 0, 240);
-    Pen.stringAtPoint("LFO", 0@238, Font.sansSerif.boldVariant.size_(44), Color.gray(1, 0.3));
-  });
-  UserView(~sv, Rect(0, 430, 1000, 310)).background_(Color.gray(0.2, 0.5)).drawFunc_({ |v|
-    Pen.rotate(-pi/2, 0, 200);
-    Pen.stringAtPoint("OSC", 0@198, Font.sansSerif.boldVariant.size_(44), Color.gray(1, 0.3));
-  });
-  UserView(~sv, Rect(0, 755, 1000, 235)).background_(Color.gray(0.2, 0.5)).drawFunc_({ |v|
-    Pen.rotate(-pi/2, 0, 165);
-    Pen.stringAtPoint("FILT", 0@163, Font.sansSerif.boldVariant.size_(44), Color.gray(1, 0.3));
-  });
-  UserView(~sv, Rect(0, 1005, 1000, 110)).background_(Color.gray(0.2, 0.5)).drawFunc_({ |v|
-    Pen.rotate(-pi/2, 0, 105);
-    Pen.stringAtPoint("AMP", 0@103, Font.sansSerif.boldVariant.size_(44), Color.gray(1, 0.3));
-  });
-  ~esv = ESView(~sv, Rect(50, 0, 930, 1115), model: ~esm);
+  presetName.postcs;
 
-  ~kwview = View(~sv, Rect(1000, 765, 495, 350));
+  ////////// LOAD MODEL ////////////////
+  ~esm.free;
+  ~esm = ESM.fromEvent(ESMPresets.at(presetName));
+
+  ////////// OPEN WINDOW WITH VIEW ////////////////
+  if (~window.notNil) { ~window.close };
+  ~window = ESWindow("ESynth", model: ~esm);
+  ~window.setPresetName(presetName);
+  ~window.addDependant { |win, what, val|
+    if (what == 'preset') {
+      ~loadES.(val)
+    };
+  };
+
+  ////////// EZMIDI KEYBOARD ////////////////
+  ~kwview = View(~window.sv, Rect(1000, 765, 495, 350));
   EZMIDI.keyboard(~kwview);
   ~window.view.keyDownAction = { |view, char|
     ~kwview.keyDownAction.(~kwview, char)
@@ -35,27 +26,8 @@
     ~kwview.keyUpAction.(~kwview, char)
   };
 
-  ~presetMenu = PopUpMenu(~window, Rect(610, 5, 260, 20))
-  .background_(Color.grey(0.04))
-  .stringColor_(Color.white)
-  .font_(Font.monospace.size_(8))
-  .items_(ESMPresets.all.keys.asArray.sort)
-  .value_(ESMPresets.all.keys.asArray.sort.indexOf(presetName))
-  .action_({ ~loadES.(~presetMenu.item) });
-  ~saveButt = Button(~window, Rect(530, 5, 70, 20))
-  .states_([["Save As...", Color.white, Color.grey(0.04)]])
-  .font_(Font.monospace.size_(8))
-  .action_({
-    var win = Window("Save preset", Rect(~window.bounds.left + 200, ~window.bounds.top + ~window.bounds.height - 250, 480, 200)).background_(Color(0.1, 0, 0.1)).front;
-    var nameField = TextField(win, Rect(50, 75, 380, 30)).font_(Font.monospace.size_(13)).background_(Color.gray(0.2)).stringColor_(Color.white);
-    Button(win, Rect(50, 130, 100, 20)).states_([["Save", Color.white, Color.gray(0.2)]]).font_(Font.monospace.size_(10)).action_({
-      ESMPresets.put(nameField.string.asSymbol, ~esm.asEvent);
-      ~presetMenu.items_(ESMPresets.all.keys.asArray.sort)
-      .value_(ESMPresets.all.keys.asArray.sort.indexOf(nameField.string.asSymbol));
-      win.close;
-    });
-    StaticText(win, Rect(50, 35, 400, 20)).string_("Save preset").font_(Font.monospace.size_(20)).stringColor_(Color.white);
-  });
+
+  ////////// DEFINE ESYNTH - MODEL DEPENDANT STUFF ////////////////
 
   ~newPatch = { |pc|
     var fromIndex = pc.fromIndex;
@@ -65,7 +37,6 @@
     var toInlet = pc.rootToInlet;
     var toDepth = pc.toDepth;
     var amt = pc.amt;
-    //[fromIndex, toCategory, toIndex, toInlet, toDepth, amt].postln;
     if (toDepth == 0) {
       ~es.addMod(fromIndex, { |v|
         v.perform(toCategory).at(toIndex)
@@ -86,7 +57,6 @@
     if (module.class == ESM) {
       var what = args[1];
       var val = args[2];
-      //[what, val].postln; // <<------
       if (what == \numVoices) {
         ~esinit.(~esm);
       } {
@@ -97,7 +67,6 @@
       var esm = args.removeAt(0);
       var what = args.removeAt(0);
       var val = args[0];
-      //("% % - % changed" ++ if (val.notNil) { " to %" } { "" }).format(module.kind, index, what, val).postln;
       switch (what)
       {\global} {
         ~es.putLFO(index, module.def.name, module.rate, module.argList, module.global);
@@ -157,7 +126,6 @@
         var toInlet = pc.rootToInlet;
         var toDepth = pc.toDepth;
         var amt = pc.amt;
-        //[toCategory, toIndex, toInlet, toDepth, amt].postln;
         if (toDepth == 0) {
           ~es.setModAmt({ |v|
             v.perform(toCategory).at(toIndex)
@@ -236,6 +204,8 @@
     };
   };
 
+  ////////// END DEFINE ESYNTH - MODEL DEPENDENT STUFF ////////////////
+
   ~esinit = { |model|
     var notes = [];
     if (~es.notNil) {
@@ -278,8 +248,9 @@
 s.waitForBoot {
   ~loadES.();
 };
-//s.plotTree;
 
+
+////////// MIDI STUFF ////////////////
 MIDIClient.init;
 MIDIIn.connectAll;
 MIDIdef.noteOn(\keyboardOn, { |vel, num| ~es.noteOn(num, vel) });
