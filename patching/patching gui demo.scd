@@ -5,7 +5,7 @@
   ~esm = ESM.fromEvent(ESMPresets.at(presetName));
 
   ////////// OPEN WINDOW WITH VIEW ////////////////
-  if (~window.notNil) { ~window.close };
+  if (~window.notNil) { ~window.onClose_({}); ~window.close };
   ~window = ESWindow("ESynth", model: ~esm);
   ~window.setPresetName(presetName);
   ~window.addDependant { |win, what, val|
@@ -13,6 +13,7 @@
       ~loadES.(val)
     };
   };
+  ~window.onClose_({ ~esc.free; });
 
   ////////// EZMIDI KEYBOARD ////////////////
   ~kwview = View(~window.sv, Rect(1000, 765, 495, 350));
@@ -44,5 +45,3 @@ MIDIdef.cc(\mod, { |val| ~esm.mod_(val.linlin(0, 127, 0, 1)) }, 1);
 
 s.record
 s.stopRecording
-
-~esc.es.free

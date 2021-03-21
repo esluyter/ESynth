@@ -194,7 +194,7 @@ ESynthDef {
 
   numChannels { |rate = 'audio'|
     var name = if (rate == 'audio') { this.arDefName } { this.krDefName };
-    ^SynthDescLib.global[name].outputs[0].numberOfChannels;
+    ^SynthDescLib.global[name].outputs.last.numberOfChannels;
   }
 
   kind { ^type } // ugh fix this

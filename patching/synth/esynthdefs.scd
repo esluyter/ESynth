@@ -168,6 +168,16 @@ ESynthDef.lfo(\Sub,
   }
 );
 
+ESynthDef.lfo(\Audio,
+  \gain, [\ar, [-24, 24, \lin, 0.0, 0], 0.2, true],
+  {
+    A2K.kr(~chain) * ~gain.dbamp
+  },
+  {
+    ~chain * ~gain.dbamp
+  }
+);
+
 
 
 
@@ -181,12 +191,20 @@ ESynthDef.osc(\VCO,
   \sin, \kr,
   \tri, \kr,
   \saw, \kr,
-  \sqr, \kr,
+  \sqr, [\kr, \amp.asSpec.copy.default_(0.1)],
   \key, [\kr, [-1, 1, \lin, 0, 1], 0.01, 10, true],
   {
     ~note = ((~note - 48) * ~key) + 48;
     ~freq = (~note + ~tune + ~fine).midicps;
     EVCO.ar(~freq, ~duty, ~slop, ~saw, ~sqr, ~sin, ~tri, ~chain);
+  }
+);
+
+ESynthDef.osc(\Noise,
+  \white, \kr,
+  \pink, [\kr, \amp.asSpec.copy.default_(0.2)],
+  {
+    WhiteNoise.ar(~white) + PinkNoise.ar(~pink)
   }
 );
 
@@ -237,7 +255,7 @@ ESynthDef.osc(\SimplexOsc,
   \oct, [\ar, [1, 5], 1],
   \offsetX, [\ar, [-48, 48, \lin, 0.0, 0], 0.01, 12, true],
   \offsetY, [\ar, [-48, 48, \lin, 0.0, 0], 0.01, 12, true],
-  \amp, \kr,
+  \amp, [\kr, \amp.asSpec.copy.default_(0.2)],
   {
     ~freq = (~note + ~tune + ~fine).midicps;
     SimplexSynth.ar(~freq, ~offsetX, ~offsetY, ~freqscale, ~oct) * ~amp;
@@ -248,7 +266,7 @@ ESynthDef.osc(\SimplexNoise,
   \freq, [\ar, [0.001, 1, \exp, 0.0, 0.1]],
   \radius, [\ar, [1, 10000, \exp, 0.0, 1000], 10],
   \oct, [\ar, [1, 5], 1],
-  \amp, \kr,
+  \amp, [\kr, \amp.asSpec.copy.default_(0.2)],
   \offsetX, [\ar, [-48, 48, \lin, 0.0, 0], 0.01, 12, true],
   \offsetY, [\ar, [-48, 48, \lin, 0.0, 0], 0.01, 12, true],
   {
@@ -401,15 +419,83 @@ ESynthDef.osc('Operator 4',
   }
 );
 
-ESynthDef.osc(\Noise,
-  \white, \kr,
-  \pink, \kr,
+ESynthDef.osc('Benjolis',
+  ['RLPF', 'RHPF', 'SVF', 'DFM1'],
+  \freq1, [\ar, [20, 14000, \exp, 0.0, 70], 25],
+  \freq2, [\ar, [0.1, 14000, \exp, 0.0, 4], 25],
+  \scale, [\kr, [0.0, 1.0, \lin, 0, 1]],
+  \rung1, [\kr, [0.0, 1.0, \lin, 0, 0.16]],
+  \rung2, [\kr, [0.0, 1.0]],
+  \rFilt, [\kr, [0.0, 10.0, \lin, 0, 9], 0.05],
+  \loop, [\kr, [0.0, 1.0, \lin, 0, 1]],
+  \fFreq, [\ar, \freq.asSpec.copy.default_(40), 25],
+  \q, [\kr, [0.0, 1.0, \lin, 0, 0.82]],
+  \gain, [\kr, [0.0, 3.0, \lin, 0, 1]],
+  \output, [\kr, [0.0, 6.0, \lin, 0, 6], 0.02],
+  \amp, [\kr, \amp.asSpec.copy.default_(0.3)],
   {
-    WhiteNoise.ar(~white) + PinkNoise.ar(~pink)
+    var freq1 = ~freq1 * (~note - 60).midiratio, freq2 = ~freq2, scale = ~scale,
+        rungler1 = ~rung1, rungler2 = ~rung2,
+        runglerFilt = ~rFilt, loop = ~loop, filtFreq = ~fFreq, q = ~q, gain = ~gain,
+        filterType = ~type, amp = ~amp, outSignal = ~output;
+    var osc1, osc2, tri1, tri2, sh0, sh1, sh2, sh3, sh4, sh5, sh6, sh7, sh8=1, rungler, pwm, filt, output;
+  	var sr;
+  	var osc2freq, buf, bufR;
+
+  	bufR = LocalIn.ar(2,0);
+  	rungler = bufR.at(0);
+  	buf = bufR.at(1);
+
+  	sr = SampleDur.ir;
+  	//sr = ControlDur.ir;
+  	tri1 = LFTri.ar((rungler*rungler1)+freq1);
+  	tri2 = LFTri.ar((rungler*rungler2)+freq2);
+  	osc1 = PulseDPW.ar((rungler*rungler1)+freq1);
+  	osc2 = PulseDPW.ar((rungler*rungler2)+freq2);
+
+  	//pwm = tri1 > tri2;
+  	pwm = BinaryOpUGen('>', (tri1 + tri2),(0));
+
+  	osc1 = ((buf*loop)+(osc1* (loop* -1 +1)));
+  	sh0 = BinaryOpUGen('>', osc1, 0.5);
+  	sh0 = BinaryOpUGen('==', (sh8 > sh0), (sh8 < sh0));
+  	sh0 = (sh0 * -1) + 1;
+
+  	sh1 = DelayN.ar(Latch.ar(sh0,osc2),0.01,sr);
+  	sh2 = DelayN.ar(Latch.ar(sh1,osc2),0.01,sr*2);
+  	sh3 = DelayN.ar(Latch.ar(sh2,osc2),0.01,sr*3);
+  	sh4 = DelayN.ar(Latch.ar(sh3,osc2),0.01,sr*4);
+  	sh5 = DelayN.ar(Latch.ar(sh4,osc2),0.01,sr*5);
+  	sh6 = DelayN.ar(Latch.ar(sh5,osc2),0.01,sr*6);
+  	sh7 = DelayN.ar(Latch.ar(sh6,osc2),0.01,sr*7);
+  	sh8 = DelayN.ar(Latch.ar(sh7,osc2),0.01,sr*8);
+
+  	//rungler = ((sh6/8)+(sh7/4)+(sh8/2)); //original circuit
+  	//rungler = ((sh5/16)+(sh6/8)+(sh7/4)+(sh8/2));
+
+  	rungler = ((sh1/2.pow(8))+(sh2/2.pow(7))+(sh3/2.pow(6))+(sh4/2.pow(5))+(sh5/2.pow(4))+(sh6/2.pow(3))+(sh7/2.pow(2))+(sh8/2.pow(1)));
+
+  	buf = rungler;
+  	rungler = (rungler * scale.linlin(0,1,0,127));
+  	rungler = rungler.midicps;
+
+  	LocalOut.ar([rungler,buf]);
+
+  	filt = [
+  		RLPF.ar(pwm,(rungler*runglerFilt)+filtFreq,q* -1 +1,gain),
+  		//BMoog.ar(pwm,(rungler*runglerFilt)+filtFreq,q,0,gain),
+  		RHPF.ar(pwm,(rungler*runglerFilt)+filtFreq,q* -1 +1,gain),
+  		SVF.ar(pwm,(rungler*runglerFilt)+filtFreq,q,1,0,0,0,0,gain),
+  		DFM1.ar(pwm,(rungler*runglerFilt)+filtFreq,q,gain,1)
+  	][filterType];
+
+  	output = SelectX.ar(outSignal, [
+  		tri1, osc1, tri2, osc2, pwm, sh0, filt
+
+  	]);
+  	LeakDC.ar(output * amp);
   }
 );
-
-
 
 
 /////////////////      FILTs       ////////////////
@@ -420,7 +506,18 @@ ESynthDef.filt(\Houvilainen,
   \res, \kr,
   {
     ~cutoff = ~cutoff * ((~env + ~vel) * 100 + (~key * 1.05)).midiratio;
-    HouvilainenFilter.ar(~in, ~cutoff, ~res, (~type + 1) % 8);
+    HouvilainenFilter.ar(~in.tanh, ~cutoff, ~res, (~type + 1) % 8);
+  }
+);
+
+ESynthDef.filt(\DFM1,
+  ['LP', 'HP'],
+  \cutoff, [\ar, \freq.asSpec.copy.default_(20000), 25],
+  \res, \kr,
+  \inputgain, [\kr, [0.0, 10.0, \amp, 0, 0.4]],
+  {
+    ~cutoff = ~cutoff * ((~env + ~vel) * 100 + (~key * 1.05)).midiratio;
+    DFM1.ar(~in, ~cutoff, ~res, ~inputgain, ~type);
   }
 );
 

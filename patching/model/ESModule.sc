@@ -175,6 +175,8 @@ ESModule {
         global = value;
         if (notify) {
           this.changed(\global, global);
+          this.changed(\patchCords);
+          this.changed(\arPatchCords);
         };
       } {
         global = false;
