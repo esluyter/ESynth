@@ -7,7 +7,9 @@ Aiming for a framework that supports experimenting with / easily adding new modu
 Requirements:
 - SC3 plugins
 - Connection quark
+- wslib quark
 - Houvilainen filter (https://github.com/esluyter/houvilainenfilter)
 - Simplexsynth (https://github.com/esluyter/simplexsynth)
+- EZMIDI (TBD)
 
 ![screenshot](img/esynth2.png)
