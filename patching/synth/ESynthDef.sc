@@ -6,19 +6,34 @@ ESynthDef {
     Class.initClassTree(ServerBoot);
     Class.initClassTree(SynthDescLib);
     Class.initClassTree(ControlSpec);
-    mod = this.new(\mod, \mod, { In.kr(\in.ir) * ~amt }, { InFeedback.ar(\in.ir) * ~amt }, nil, [ESParam(\amt, \control, [-1, 1, \lin, 0.0, 0], centered: true)], maxMods: 1);
-    note = this.new(\notesyn, \note, { ~note.lag2(~portamento) + ~tune + ~fine + (~bend.lag(0.05) * \bendRange.kr(2)) }, nil, nil, [
-      ESParam(\portamento, \control, [0, 20, 8, 0.0, 0.001], 0.1),
-      ESParam(\note, \control, [0, 127]),
-      ESParam(\bend, \control, [-12, 12]),
-      ESParam(\tune, \control, [-48, 48, \lin, 0.0, 0], 1, 12, true),
-      ESParam(\fine, \control, [-2, 2, \lin, 0.0, 0], 0.01, 10, true)
-    ], maxMods: 2, modOffset: 3);
+
+    mod = this.new(\mod, \mod,
+      { In.kr(\in.ir) * ~amt },
+      { InFeedback.ar(\in.ir) * ~amt },
+      nil,
+      [ESParam(\amt, \control, [-1, 1, \lin, 0.0, 0], centered: true)],
+      maxMods: 1);
+
+    note = this.new(\notesyn, \note,
+      { ~note.lag2(~portamento) + ~tune + ~fine + (~bend.lag(0.05) * \bendRange.kr(2)) }, nil,
+      nil,
+      [
+        ESParam(\portamento, \control, [0, 20, 8, 0.0, 0.001], 0.1),
+        ESParam(\note, \control, [0, 127]),
+        ESParam(\bend, \control, [-12, 12]),
+        ESParam(\tune, \control, [-48, 48, \lin, 0.0, 0], 1, 12, true),
+        ESParam(\fine, \control, [-2, 2, \lin, 0.0, 0], 0.01, 10, true)
+      ],
+      maxMods: 2,
+      modOffset: 3);
+
     nilfilt = this.new(\filt, \nilfilt, nil, { \in.ar }, maxMods: 2, maxRoutes: 2);
+
     lfos = ();
     oscs = ();
     filts = ();
     amps = ();
+
     ServerBoot.add {
       this.addSynthDefs;
     };
@@ -38,7 +53,6 @@ ESynthDef {
         SynthDef(this.arDefName(type_i), {
           var out = \out.kr;
           var sig = this.prMakeParamEnvir(type_i).use(arfunc);
-          //if (type == \filt) { ReplaceOut.ar(out, sig) } { Out.ar(out, sig) };
           Out.ar(out, sig);
         }).add;
       };

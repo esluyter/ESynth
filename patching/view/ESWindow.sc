@@ -6,7 +6,7 @@ ESWindow : SCViewHolder {
   }
 
   init { |name, bounds, model|
-    bounds = bounds ?? { Rect(0, 200, min(1500, Window.screenBounds.width), min(1155, Window.screenBounds.height - 25)) };
+    bounds = bounds ?? { Rect(0, 200, min(1800, Window.screenBounds.width), min(1155, Window.screenBounds.height - 25)) };
 
     win = Window.new(name, bounds)
       .background_(Color(0.1, 0, 0.1))

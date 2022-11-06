@@ -1,4 +1,5 @@
 /////////////////      LFOs       ////////////////
+/*TODO: LF SIN gated phasor only works after synth patch is reloaded?? */
 
 ESynthDef.lfo(\Sin,
   [\random, \gate],
@@ -11,6 +12,7 @@ ESynthDef.lfo(\Sin,
     var trig = ~gate * ~type;
     var phase = Select.kr(~type, [Rand(0, 1), DC.kr(0)]) + ~phase;
     var phasor = (Phasor.kr(trig, ~freq * (((~note - 48) * ~key).midiratio) * 2pi / ControlRate.ir, 0, 2pi) + (phase * 2pi)).wrap(0, 2pi);
+    //phasor.poll;
     SinOsc.kr(0, phasor) * env;
   }, {
     var env = Integrator.kr(ControlDur.ir / ~delay, 1 - (Changed.kr(~gate) * ~gate)).clip(0, 1);
@@ -113,10 +115,67 @@ ESynthDef.lfo(\Env,
   }
 );
 
+ESynthDef.lfo(\EnvTr,
+  [\sustain, \oneshot, \retrig],
+  \in, [\ar, [-1, 1, \lin, 0.0, 0], 0.01, 10, true],
+  \atk, [\kr, [0.001, 20, 8], 0.1],
+  \dec, [\kr, [0.001, 20, 8, 0.0, 0.5], 0.1],
+  \sus, [\kr,  \amp.asSpec.copy.default_(1)],
+  \rel, [\kr, [0.001, 20, 8], 0.1],
+  {
+    var loopNode = Select.kr(~type, [-99, -99, 0]);
+    var relNode = Select.kr(~type, [2, -99, 2]);
+    Env([0, 1, ~sus, 0], [~atk, ~dec, ~rel], -4, relNode, loopNode).kr(0, ~in);
+  },
+  {
+    var loopNode = Select.kr(~type, [-99, -99, 0]);
+    var relNode = Select.kr(~type, [2, -99, 2]);
+    Env([0, 1, ~sus, 0], [~atk, ~dec, ~rel], -4, relNode, loopNode).ar(0, ~in);
+  }
+);
+
+ESynthDef.lfo(\Clock,
+  [\Impulse, \Dust],
+  \bpm, [\kr, [0, 999, 2, 0.0, 110], 1],
+  \phase, [\kr, [0, 1, \lin]],
+  {
+    var freq = ~bpm / 60;
+    Select.kr(~type, [Impulse.kr(freq, ~phase), Dust.kr(freq)]);
+  },
+  {
+    var freq = ~bpm / 60;
+    Select.ar(~type, [Impulse.ar(freq, ~phase), Dust.ar(freq)]);
+  }
+);
+
+ESynthDef.lfo(\PDiv,
+  \in, [\ar, [-1, 1, \lin, 0.0, 0], 0.01, 10, true],
+  \div, [\kr, [1, 100, \exp, 0.0, 4]],
+  {
+    PulseDivider.kr(~in, ~div);
+  },
+  {
+    PulseDivider.ar(~in, ~div);
+  }
+);
+
+ESynthDef.lfo(\CoinGate,
+  \in, [\ar, [-1, 1, \lin, 0.0, 0], 0.01, 10, true],
+  \weight, [\ar, [0, 1.0, \lin, 0.0, 0.5]],
+  {
+    CoinGate.kr(~weight, ~in)
+  },
+  {
+    CoinGate.ar(~weight, ~in)
+  }
+);
+
 ESynthDef.lfo(\Mod,
   [\positive, \bipolar],
+  \curve, [\kr, [-24, 24, \lin, 0.0, 0], 0.2, true],
   {
-    Lag.kr(In.kr(\modbus.ir) * 2 - ~type, 0.05);
+    var sig = In.kr(\modbus.ir).lincurve(0, 1, 0, 1, ~curve);
+    Lag.kr(sig * 2 - ~type, 0.05);
   }
 );
 
@@ -168,6 +227,39 @@ ESynthDef.lfo(\Sub,
   }
 );
 
+ESynthDef.lfo(\Comp,
+  \in1, [\ar, [-1, 1, \lin, 0.0, 0], 0.01, 10, true],
+  \in2, [\ar, [-1, 1, \lin, 0.0, 0], 0.01, 10, true],
+  {
+    ~in1 > ~in2
+  },
+  {
+    ~in1 > ~in2
+  }
+);
+
+ESynthDef.lfo(\Changed,
+  \in, [\ar, [-1, 1, \lin, 0.0, 0], 0.01, 10, true],
+  \thresh, [\ar, [0, 1, \lin, 0.0, 0], 0.01, 10],
+  {
+    Changed.kr(~in, ~thresh);
+  },
+  {
+    Changed.ar(~in, ~thresh);
+  }
+);
+
+ESynthDef.lfo(\Trig,
+  \in, [\ar, [-1, 1, \lin, 0.0, 0], 0.01, 10, true],
+  \dur, [\kr, [[0.001, 20, 8], [0.00001, 20, 8]], [0.1, 10]],
+  {
+    Trig.kr(~in, ~dur);
+  },
+  {
+    Trig.ar(~in, ~dur);
+  }
+);
+
 ESynthDef.lfo(\Audio,
   \gain, [\ar, [-24, 24, \lin, 0.0, 0], 0.2, true],
   {
@@ -175,6 +267,81 @@ ESynthDef.lfo(\Audio,
   },
   {
     ~chain * ~gain.dbamp
+  }
+);
+
+ESynthDef.lfo(\Slew,
+  \in, [\ar, [-1, 1, \lin, 0.0, 0], 0.01, 10, true],
+  \time, [\ar, [0.001, 10, \exp], 0.1],
+  {
+    Lag2.kr(~in, ~time)
+  },
+  {
+    Lag2.ar(~in, ~time)
+  }
+);
+
+ESynthDef.lfo(\Quant,
+  \in, [\ar, [-1, 1, \lin, 0.0, 0], 0.01, 10, true],
+  \sens, [\kr, [-12, 12, \lin, 0.0, 0], 0.1, true],
+  \steps, [\kr, [1, 100, 5, 0.0, 12], 0.5],
+  \knee, [\kr, [0, 1, \lin]],
+  \lag, \kr,
+  {
+    var input = ~in;
+    var sensitivity = ~sens.dbamp;
+    var steps = ~steps;
+    var knee = ~knee;
+    var lag = ~lag;
+    var adjustedInput, adjustedInputQuant, adjustedInputDiff, adjustedInputDiffKnee;
+
+    steps = steps / 2;
+    adjustedInput = (input * sensitivity * steps);
+    adjustedInputQuant = adjustedInput.floor;
+
+    knee = knee.lincurve(0, 1, 0, 1, 2).linexp(0, 1, 100, 1);
+    adjustedInputDiff = adjustedInput - adjustedInputQuant - 0.5;
+    adjustedInputDiffKnee = RemoveBadValues.kr((adjustedInputDiff * 2 * knee).sinh / knee.sinh, 0) * 0.5;
+
+    input = (adjustedInputQuant + adjustedInputDiffKnee) / steps;
+
+    input = Lag2.kr(input, lag);
+  },
+  {
+    var input = ~in;
+    var sensitivity = ~sens.dbamp;
+    var steps = ~steps;
+    var knee = ~knee;
+    var lag = ~lag;
+    var adjustedInput, adjustedInputQuant, adjustedInputDiff, adjustedInputDiffKnee;
+
+    steps = steps / 2;
+    adjustedInput = (input * sensitivity * steps);
+    adjustedInputQuant = adjustedInput.floor;
+
+    knee = knee.lincurve(0, 1, 0, 1, 2).linexp(0, 1, 100, 1);
+    adjustedInputDiff = adjustedInput - adjustedInputQuant - 0.5;
+    adjustedInputDiffKnee = RemoveBadValues.kr((adjustedInputDiff * 2 * knee).sinh / knee.sinh, 0) * 0.5;
+
+    input = (adjustedInputQuant + adjustedInputDiffKnee) / steps;
+
+    input = K2A.ar(input);
+    input = Lag2.ar(input, lag);
+  }
+);
+
+
+// REALLY NEED MULTICHAN OUTPUT FOR THIS>>>>
+ESynthDef.lfo(\Chen,
+  \speed, [\kr, [0, 1.0, \lin, 0.0, 0.5]],
+  \aa, [\kr, [0, 1.0, \lin, 0.0, 0.5]],
+  \bb, [\kr, [0, 1.0, \lin, 0.0, 0.3]],
+  \cc, [\kr, [0, 1.0, \lin, 0.0, 0.28]],
+  {
+    Chen.kr(~speed, ~aa, ~bb, ~cc);
+  },
+  {
+    Chen.ar(~speed, ~aa, ~bb, ~cc);
   }
 );
 
@@ -208,6 +375,82 @@ ESynthDef.osc(\Noise,
   }
 );
 
+ESynthDef.osc(\SoundIn,
+  \gain, [\ar, [-24, 24, \lin, 0.0, 0], 0.2, true],
+  \input, [\kr, [0, 16, \lin, 1, 0]],
+  {
+    SoundIn.ar(~input) * ~gain.dbamp
+  }
+);
+
+ESynthDef.osc(\NeoVarSaw,
+  \tune, [\ar, [-48, 48, \lin, 0.0, 0], 1, 12, true],
+  \fine, [\ar, [-2, 2, \lin, 0.0, 0], 0.01, 10, true],
+  \duty, [\kr, [0, 1, \lin, 0.0, 0.5], 0.01, 10, true],
+  \shape, [\kr, [0, 1, \lin, 0.0, 1.0]],
+  \amp, [\kr, [0, 1, \amp, 0.0, 0.1]],
+  \key, [\kr, [-1, 1, \lin, 0, 1], 0.01, 10, true],
+  {
+    ~note = ((~note - 48) * ~key) + 48;
+    ~freq = (~note + ~tune + ~fine).midicps;
+    NeoVarSawOsc.ar(~freq, ~duty, ~shape) * ~amp;
+  }
+);
+
+ESynthDef.osc(\808,
+  \trig, \ar,
+  \tune, [\ar, [-48, 48, \lin, 0.0, 0], 1, 12, true],
+  \infsus, \kr,
+  \accent, \kr,
+  \tone, \kr,
+  \decay, \kr,
+  \atfm, \kr,
+  \selffm, \kr,
+  \key, [\kr, [-1, 1, \lin, 0, 1], 0.01, 10, true],
+  \amp, [\kr, [0, 1, \amp, 0.0, 0.1]],
+  {
+    ~note = ((~note - 48) * ~key) + 48;
+    ~freq = (~note + ~tune).midicps;
+    ~trig = ~trig + Trig.kr(~gate, 0.01);
+    AnalogBassDrum.ar(~trig, ~infsus, ~accent, ~freq, ~tone, ~decay, ~atfm, ~selffm) * 8 * ~amp
+  }
+);
+
+ESynthDef.osc('808snare',
+  \trig, \ar,
+  \tune, [\ar, [-48, 48, \lin, 0.0, 0], 1, 12, true],
+  \infsus, \kr,
+  \accent, \kr,
+  \tone, \kr,
+  \decay, \kr,
+  \snappy, \kr,
+  \key, [\kr, [-1, 1, \lin, 0, 1], 0.01, 10, true],
+  \amp, [\kr, [0, 1, \amp, 0.0, 0.1]],
+  {
+    ~note = ((~note - 48) * ~key) + 48;
+    ~freq = (~note + ~tune).midicps;
+    ~trig = ~trig + Trig.kr(~gate, 0.01);
+    AnalogSnareDrum.ar(~trig, ~infsus, ~accent, ~freq, ~tone, ~decay, ~snappy) * ~amp;
+  }
+);
+
+ESynthDef.osc(\StringVoice,
+  \trig, \ar,
+  \tune, [\ar, [-48, 48, \lin, 0.0, 0], 1, 12, true],
+  \infsus, \kr,
+  \accent, \kr,
+  \struct, \kr,
+  \bright, \kr,
+  \damp, \kr,
+  \key, [\kr, [-1, 1, \lin, 0, 1], 0.01, 10, true],
+  {
+    ~note = ((~note - 48) * ~key) + 48;
+    ~freq = (~note + ~tune).midicps;
+    ~trig = ~trig + Trig.kr(~gate, 0.01);
+    StringVoice.ar(~trig, ~infsus, ~freq, ~accent, ~struct, ~bright, ~damp);
+  }
+);
+
 /*ESynthDef.osc(\SuperSaw,
   \tune, [\ar, [-48, 48, \lin, 0.0, 0], 1, 12, true],
   \fine, [\ar, [-2, 2, \lin, 0.0, 0], 0.01, 10, true],
@@ -227,6 +470,7 @@ ESynthDef.osc(\SuperSaw,
   \varHz, [\kr, [0.01, 10, \exp, 0.0, 0.2], 0.1],
   \side, [\kr,  \amp.asSpec.copy.default_(0.5)],
   \sideAtt, [\kr, [-32, 32, \lin, 0.0, 0.0], 0.1, 1, true],
+  \amp, [\kr, [0, 1, \amp, 0.0, 0.1]],
   {
     var maxsize = 25;
     var midpoint = (maxsize + 1) / 2;
@@ -244,7 +488,7 @@ ESynthDef.osc(\SuperSaw,
     var amps = maxsize.collect { |i| (i >= nOffset) * (i < (maxsize - nOffset)) * ((BinaryOpUGen('==', i, midpoint) * 0.7) + (BinaryOpUGen('!=', i, midpoint) * sideAmt * ((i - midpoint).abs * sideSlope).dbamp)) };
     var freqs = maxsize.collect({ |i| (note + (primes[i] * detune) + (BinaryOpUGen('!=', i, midpoint) * LFDNoise3.kr(varSpeed) * variation)).midicps });
     var saws = Saw.ar(freqs);
-    Normalizer.ar((saws * amps).sum, 0.1, 0.01)
+    Normalizer.ar((saws * amps).sum, 0.1, 0.01) * ~amp * 10;
   }
 );
 
@@ -510,14 +754,72 @@ ESynthDef.filt(\Houvilainen,
   }
 );
 
+ESynthDef.filt(\Vadim,
+  ['LP 2', 'LP 4', 'BP 2', 'BP 4', 'HP 2', 'HP 4'],
+  \cutoff, [\ar, \freq.asSpec.copy.default_(20000), 25],
+  \res, \kr,
+  {
+    ~cutoff = ~cutoff * ((~env + ~vel) * 100 + (~key * 1.05)).midiratio;
+    ~cutoff = ~cutoff.clip(10, 20000);
+    VadimFilter.ar(~in, ~cutoff, ~res, ~type);
+  }
+);
+
+ESynthDef.filt(\Diode,
+  \cutoff, [\ar, \freq.asSpec.copy.default_(20000), 25],
+  \res, \kr,
+  \drive, [\kr, [0.1, 100, \exp, 0.0, 1], 0.3],
+  {
+    ~cutoff = ~cutoff * ((~env + ~vel) * 100 + (~key * 1.05)).midiratio;
+    ~cutoff = ~cutoff.clip(10, 20000);
+    VADiodeFilter.ar(~in, ~cutoff, ~res, ~drive) * 0.2;
+  }
+);
+
+ESynthDef.filt(\Korg35,
+  ['LP', 'HP'],
+  \cutoff, [\ar, \freq.asSpec.copy.default_(20000), 25],
+  \res, \kr,
+  \drive, [\kr, [0.1, 100, \exp, 0.0, 1], 0.3],
+  {
+    ~cutoff = ~cutoff * ((~env + ~vel) * 100 + (~key * 1.05)).midiratio;
+    ~cutoff = ~cutoff.clip(10, 20000);
+    VAKorg35.ar(~in, ~cutoff, ~res, ~drive, ~type) * 0.2;
+  }
+);
+
+ESynthDef.filt(\Ladder,
+  ['LP 2', 'LP 4', 'BP 2', 'BP 4', 'HP 2', 'HP 4'],
+  \cutoff, [\ar, \freq.asSpec.copy.default_(20000), 25],
+  \res, \kr,
+  \drive, [\kr, [0.1, 100, \exp, 0.0, 1], 0.3],
+  {
+    ~cutoff = ~cutoff * ((~env + ~vel) * 100 + (~key * 1.05)).midiratio;
+    ~cutoff = ~cutoff.clip(10, 20000);
+    VALadder.ar(~in, ~cutoff, ~res, ~drive, ~type) * 0.2;
+  }
+);
+
+ESynthDef.filt(\VASEM12,
+  \cutoff, [\ar, \freq.asSpec.copy.default_(20000), 25],
+  \res, \kr,
+  \transition, [\kr, [-1.0, 1.0, \lin]],
+  {
+    ~cutoff = ~cutoff * ((~env + ~vel) * 100 + (~key * 1.05)).midiratio;
+    ~cutoff = ~cutoff.clip(10, 20000);
+    VASEM12.ar(~in, ~cutoff, ~res, ~transition);
+  }
+);
+
 ESynthDef.filt(\DFM1,
   ['LP', 'HP'],
   \cutoff, [\ar, \freq.asSpec.copy.default_(20000), 25],
   \res, \kr,
-  \inputgain, [\kr, [0.0, 10.0, \amp, 0, 0.4]],
+  \ingain, [\kr, [0.0, 10.0, \amp, 0, 0.4]],
+  \outgain, [\kr, [0.0, 10.0, \amp, 0, 1.0]],
   {
     ~cutoff = ~cutoff * ((~env + ~vel) * 100 + (~key * 1.05)).midiratio;
-    DFM1.ar(~in, ~cutoff, ~res, ~inputgain, ~type);
+    DFM1.ar(~in, ~cutoff, ~res, ~ingain, ~type) * ~outgain;
   }
 );
 
@@ -530,7 +832,40 @@ ESynthDef.filt(\Decimator,
   }
 );
 
+ESynthDef.filt(\AudioMSG,
+  \index, [\ar, [0.01, 20, \exp, 0.0, 0.01], 0.2],
+  {
+    AudioMSG.ar(~in * 10, ~index) * 0.1;
+  }
+);
 
+ESynthDef.filt(\SoftClipAmp,
+  \pregain, [\ar, [0.1, 100, \exp, 0.0, 1], 0.3],
+  {
+    ~pregain = ~pregain + (~env + ~vel).linexp(0, 1, 0.1, 100);
+    AudioMSG.ar(~in * 10, ~pregain) * 0.1;
+  }
+);
+
+ESynthDef.filt(\Delay,
+  \delay, [\kr, [0.1, 10.0, \exp, 0.0, 0.3]],
+  \decay, [\kr, [-10, 10, \lin, 0.0, 1.0], 0.1, 10, true],
+  {
+    AllpassC.ar(~in, 10.0, ~delay.lag(0.01), ~decay);
+  }
+);
+
+ESynthDef.filt(\AVDistortion,
+  \drive, \kr,
+  \bias, [\kr, [0, 2.5]],
+  \low, [\kr, [0.0001, 0.3, \exp]],
+  \hi, [\kr, [0.0001, 0.3, \exp]],
+  //\cross, [\kr, [50, 5000, \exp, 0.0, 600]],
+  {
+    ~cross = 600;
+    AnalogVintageDistortion.ar(~in, ~drive, ~bias, ~low, ~hi, ~cross, oversample: 1);
+  }
+);
 
 
 /////////////////      AMPs       ////////////////
